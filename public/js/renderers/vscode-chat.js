@@ -159,6 +159,7 @@ function renderToolInvocation(conversation, item, ts) {
   const resultText = (typeof resultMsg === 'object' ? resultMsg.value : resultMsg) || '';
   const toolName = item.toolId || item.name || '';
   const isConfirmed = item.isConfirmed;
+  const tsd = item.toolSpecificData || {};
 
   let displayName = toolName;
   if (!displayName && invText) {
@@ -166,9 +167,59 @@ function renderToolInvocation(conversation, item, ts) {
     if (match) displayName = match[1];
   }
 
+  // Extract rich data from toolSpecificData
+  let argsHtml = '';
+  let outputHtml = '';
+
+  if (tsd.kind === 'terminal') {
+    // Terminal tool: show command and output
+    const cmd = tsd.commandLine || {};
+    const cmdLine = (typeof cmd === 'object' ? cmd.original : cmd) || '';
+    if (cmdLine) {
+      argsHtml = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Command:</div><div class="tool-cmd">${escapeHtml(cmdLine)}</div>`;
+    }
+    const termOutput = tsd.terminalCommandOutput || {};
+    const outputText = (typeof termOutput === 'object' ? termOutput.text : termOutput) || '';
+    const state = tsd.terminalCommandState || {};
+    const exitCode = typeof state === 'object' ? state.exitCode : null;
+    if (outputText) {
+      const shortOut = outputText.length > 3000 ? outputText.slice(0, 3000) + '...' : outputText;
+      const exitBadge = exitCode === 0 ? '<span class="tool-status-ok">✅ exit 0</span>'
+        : exitCode != null ? `<span class="tool-status-fail">exit ${exitCode}</span>` : '';
+      outputHtml = `<div style="font-size:11px;color:var(--text-muted);margin:8px 0 4px">Output: ${exitBadge}</div><div class="tool-output">${escapeHtml(shortOut)}</div>`;
+    } else if (exitCode != null) {
+      outputHtml = `<div class="tool-exec-result ${exitCode === 0 ? 'exec-ok' : 'exec-fail'}">${exitCode === 0 ? '✅' : '❌'} exit ${exitCode}</div>`;
+    }
+  } else if (tsd.kind === 'subagent') {
+    // Subagent tool: show description, agent, prompt, result
+    const desc = tsd.description || '';
+    const agent = tsd.agentName || '';
+    const prompt = tsd.prompt || '';
+    const result = tsd.result || '';
+    if (desc || agent) {
+      argsHtml = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${agent ? 'Agent: ' + escapeHtml(agent) : ''}${desc ? (agent ? ' · ' : '') + escapeHtml(desc) : ''}</div>`;
+    }
+    if (prompt) {
+      argsHtml += `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Prompt:</div><div class="tool-cmd">${escapeHtml(prompt.slice(0, 2000))}</div>`;
+    }
+    if (result) {
+      const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+      outputHtml = `<div style="font-size:11px;color:var(--text-muted);margin:8px 0 4px">Result:</div><div class="tool-output">${escapeHtml(resultStr.slice(0, 3000))}</div>`;
+    }
+  }
+
+  // Fallback to invocationMessage / resultMessage if no toolSpecificData
+  if (!argsHtml && invText) {
+    argsHtml = `<div class="tool-cmd">${renderMarkdown(invText)}</div>`;
+  }
+  if (!outputHtml && resultText) {
+    outputHtml = `<div style="font-size:11px;color:var(--text-muted);margin:8px 0 4px">Result:</div><div class="tool-output">${renderMarkdown(resultText)}</div>`;
+  }
+
   const id = genId();
-  const statusBadge = isConfirmed === false ? '<span class="tool-status-fail">❌ Rejected</span>'
-    : isConfirmed === true ? '<span class="tool-status-ok">✅</span>' : '';
+  const confirmed = typeof isConfirmed === 'object' ? isConfirmed.type : isConfirmed;
+  const statusBadge = confirmed === false || confirmed === 2 ? '<span class="tool-status-fail">❌ Rejected</span>'
+    : confirmed === true || confirmed === 0 ? '<span class="tool-status-ok">✅</span>' : '';
 
   block.innerHTML = `
     <div class="msg-label collapse-toggle" data-target="${id}">
@@ -177,8 +228,8 @@ function renderToolInvocation(conversation, item, ts) {
     </div>
     <div class="collapsible-content open" id="${id}">
       <div class="tool-detail">
-        ${invText ? `<div class="tool-cmd">${renderMarkdown(invText)}</div>` : ''}
-        ${resultText ? `<div style="font-size:11px;color:var(--text-muted);margin:8px 0 4px">Result:</div><div class="tool-output">${renderMarkdown(resultText)}</div>` : ''}
+        ${argsHtml}
+        ${outputHtml}
       </div>
     </div>
   `;
