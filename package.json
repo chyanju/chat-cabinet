@@ -1,0 +1,12 @@
+{
+  "name": "chat-cabinet",
+  "version": "1.0.0",
+  "description": "Browse and view local AI coding assistant session logs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "marked": "^15.0.0"
+  }
+}
