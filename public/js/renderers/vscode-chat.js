@@ -1,5 +1,29 @@
 import { escapeHtml, formatTimeBrief, renderMarkdown, genId, setupCollapse, createBlock } from '../utils.js';
 
+/**
+ * Map VS Code's isConfirmed.type enum to human-readable labels.
+ *   0 = Accepted (explicit user click)
+ *   1 = Auto-confirmed (no confirmation needed, e.g. read-only tools)
+ *   2 = Rejected / Denied by user
+ *   3 = Accepted after confirmation prompt
+ *   4 = Allowed by session-level "Allow All"
+ *   5 = Explicitly accepted after prompt
+ *   None = Unknown / in-progress
+ */
+function confirmationBadge(isConfirmed) {
+  if (isConfirmed == null) return '';
+  const type = typeof isConfirmed === 'object' ? isConfirmed.type : isConfirmed;
+  switch (type) {
+    case 0: return '<span class="tool-status-ok" title="User explicitly accepted">👤 Accepted</span>';
+    case 1: return '<span class="tool-status-auto" title="Auto-confirmed (no user action needed)">⚡ Auto</span>';
+    case 2: return '<span class="tool-status-fail" title="User rejected this tool call">🚫 Rejected</span>';
+    case 3: return '<span class="tool-status-ok" title="User accepted after confirmation prompt">👤 Confirmed</span>';
+    case 4: return '<span class="tool-status-auto" title="Allowed by session-level Allow All">✅ Allow All</span>';
+    case 5: return '<span class="tool-status-ok" title="User explicitly accepted">👤 Accepted</span>';
+    default: return '';
+  }
+}
+
 export function renderVSCodeChatSession(conversation, entries) {
   const session = {};
 
@@ -79,6 +103,8 @@ export function renderVSCodeChatSession(conversation, entries) {
         const content = item.content || {};
         markdownBuffer += (typeof content === 'object' ? content.value : content) || '';
       } else if (ik === 'toolInvocationSerialized') {
+        // Skip hidden tools (e.g. copilot_fetchWebPage wrapper)
+        if (item.presentation === 'hidden') continue;
         if (markdownBuffer.trim()) {
           const block = createBlock('msg-assistant', 'ASSISTANT', ts);
           block.querySelector('.msg-body').innerHTML = renderMarkdown(markdownBuffer);
@@ -216,14 +242,33 @@ function renderToolInvocation(conversation, item, ts) {
     outputHtml = `<div style="font-size:11px;color:var(--text-muted);margin:8px 0 4px">Result:</div><div class="tool-output">${renderMarkdown(resultText)}</div>`;
   }
 
+  // Show resultDetails (e.g. fetched URLs)
+  const resultDetails = item.resultDetails;
+  if (!outputHtml && Array.isArray(resultDetails) && resultDetails.length > 0) {
+    const urls = resultDetails.map(u => {
+      if (u && typeof u === 'object' && u.scheme && u.authority) {
+        return `${u.scheme}://${u.authority}${u.path || ''}`;
+      }
+      return '';
+    }).filter(Boolean);
+    if (urls.length > 0) {
+      outputHtml = `<div style="font-size:11px;color:var(--text-muted);margin:8px 0 4px">URLs:</div><div class="tool-output">${urls.map(u => escapeHtml(u)).join('\n')}</div>`;
+    }
+  }
+
+  // Show pastTenseMessage as fallback description
+  const ptm = item.pastTenseMessage;
+  const ptmText = (typeof ptm === 'object' ? ptm?.value : ptm) || '';
+  if (!argsHtml && !outputHtml && ptmText) {
+    argsHtml = `<div class="tool-cmd">${escapeHtml(ptmText)}</div>`;
+  }
+
   const id = genId();
-  const confirmed = typeof isConfirmed === 'object' ? isConfirmed.type : isConfirmed;
-  const statusBadge = confirmed === false || confirmed === 2 ? '<span class="tool-status-fail">❌ Rejected</span>'
-    : confirmed === true || confirmed === 0 ? '<span class="tool-status-ok">✅</span>' : '';
+  const badge = confirmationBadge(isConfirmed);
 
   block.innerHTML = `
     <div class="msg-label collapse-toggle" data-target="${id}">
-      🔧 ${escapeHtml(displayName || 'Tool')} ${statusBadge}
+      🔧 ${escapeHtml(displayName || 'Tool')} ${badge}
       <span style="font-weight:400;font-size:10px;color:var(--text-muted);margin-left:auto">${formatTimeBrief(ts)}</span>
     </div>
     <div class="collapsible-content open" id="${id}">

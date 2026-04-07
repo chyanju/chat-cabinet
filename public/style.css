@@ -655,6 +655,11 @@ body {
   color: var(--red);
   margin-left: 6px;
 }
+.tool-status-auto {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
 
 /* ── Turn boundaries (VS Code) ───────────── */
 
