@@ -8,6 +8,8 @@ A local web-based viewer for browsing AI coding assistant session logs. It aggre
   - Codex CLI (`~/.codex/sessions/` and `~/.codex/archived_sessions/`)
   - VS Code Insiders Copilot Chat debug logs
   - VS Code Stable Copilot Chat debug logs
+  - Claude Code (`~/.claude/projects/`)
+  - Cursor agent transcripts (`~/.cursor/projects/*/agent-transcripts/`)
 - **Search & filter** — full-text search across sessions with source-based filter chips
 - **Detailed conversation view** — renders user messages, assistant replies, tool calls, reasoning traces, and more
 - **Markdown rendering** — assistant messages are rendered with full Markdown support via [marked](https://github.com/markedjs/marked)
@@ -32,11 +34,33 @@ The server starts at **http://localhost:3456**. Open it in your browser to brows
 
 ```
 chat-cabinet/
-├── server.js          # HTTP server & session discovery logic
+├── server.js                  # HTTP server & routes (entry point)
+├── server/
+│   ├── sessions.js            # Session discovery orchestrator & loader
+│   ├── utils.js               # Shared helpers (findJsonlFiles, path decoding)
+│   └── sources/
+│       ├── codex.js           # Codex CLI session parser
+│       ├── vscode-copilot.js  # VS Code Copilot debug-logs parser
+│       ├── vscode-chat.js     # VS Code chatSessions parser
+│       ├── claude.js          # Claude Code session parser
+│       └── cursor.js          # Cursor agent transcript parser
 ├── public/
-│   ├── index.html     # Main HTML page
-│   ├── app.js         # Frontend application logic
-│   └── style.css      # Styles (dark theme)
+│   ├── index.html             # Main HTML page
+│   ├── app.js                 # Frontend entry (state, routing, events)
+│   ├── style.css              # Styles (dark theme)
+│   └── js/
+│       ├── api.js             # Fetch helpers
+│       ├── sources.js         # Source labels & colors
+│       ├── sidebar.js         # Source chips & session list
+│       ├── utils.js           # Shared utilities (escapeHtml, markdown, etc.)
+│       ├── export.js          # Export to .md / .txt
+│       └── renderers/
+│           ├── blocks.js      # Shared UI blocks (messages, tools, events)
+│           ├── codex.js       # Codex format renderer
+│           ├── vscode-copilot.js  # VS Code debug-logs renderer
+│           ├── vscode-chat.js     # VS Code chatSessions renderer
+│           ├── claude.js      # Claude Code renderer
+│           └── cursor.js      # Cursor renderer
 ├── package.json
 └── LICENSE
 ```
