@@ -1,4 +1,4 @@
-import { escapeHtml, formatTime, formatTimeBrief, extractText } from './utils.js';
+import { formatTime, formatTimeBrief } from './utils.js';
 
 export function getExportConfig() {
   return {
@@ -13,111 +13,87 @@ export function getExportConfig() {
   };
 }
 
-export function entriesToText(entries, meta, format) {
+/**
+ * Export a Chat Cabinet unified session to text.
+ */
+export function entriesToText(session, meta, format) {
   const cfg = getExportConfig();
   const lines = [];
   const isMd = format === 'md';
-  const divider = isMd ? '\n---\n' : '\n' + '─'.repeat(60) + '\n';
+  const divider = isMd ? '\n---\n' : '\n' + String.fromCharCode(9472).repeat(60) + '\n';
+
+  const model = session.model?.name || session.model?.id || meta.model_provider || 'unknown';
+  const cwd = session.workspace?.cwd || meta.cwd || '?';
+  const source = session.source?.tool || meta.source || '?';
+  const sid = session.session_id || meta.id;
 
   if (isMd) {
-    lines.push(`# Chat Cabinet Session ${meta.id}\n`);
-    lines.push(`- **Time:** ${formatTime(meta.timestamp)}`);
-    lines.push(`- **Model:** ${meta.model_provider || 'unknown'}`);
-    lines.push(`- **CLI:** ${meta.cli_version || '?'}`);
-    lines.push(`- **CWD:** ${meta.cwd || '?'}`);
-    lines.push(`- **Source:** ${meta.source || meta.originator || '?'}`);
+    lines.push('# Chat Cabinet Session ' + sid + '\n');
+    lines.push('- **Time:** ' + formatTime(session.created_at || meta.timestamp));
+    lines.push('- **Model:** ' + model);
+    lines.push('- **CWD:** ' + cwd);
+    lines.push('- **Source:** ' + source);
+    if (session.title) lines.push('- **Title:** ' + session.title);
   } else {
-    lines.push(`Chat Cabinet Session ${meta.id}`);
-    lines.push(`Time:   ${formatTime(meta.timestamp)}`);
-    lines.push(`Model:  ${meta.model_provider || 'unknown'}`);
-    lines.push(`CLI:    ${meta.cli_version || '?'}`);
-    lines.push(`CWD:    ${meta.cwd || '?'}`);
-    lines.push(`Source: ${meta.source || meta.originator || '?'}`);
+    lines.push('Chat Cabinet Session ' + sid);
+    lines.push('Time:   ' + formatTime(session.created_at || meta.timestamp));
+    lines.push('Model:  ' + model);
+    lines.push('CWD:    ' + cwd);
+    lines.push('Source: ' + source);
+    if (session.title) lines.push('Title:  ' + session.title);
   }
   lines.push(divider);
 
-  const callMap = new Map();
-  for (const entry of entries) {
-    if (entry.type === 'response_item') {
-      const p = entry.payload;
-      if (p.type === 'function_call') callMap.set(p.call_id, { call: p, output: null });
-      else if (p.type === 'function_call_output') {
-        const ex = callMap.get(p.call_id);
-        if (ex) ex.output = p;
-        else callMap.set(p.call_id, { call: null, output: p });
-      }
-    }
-  }
+  for (const turn of (session.turns || [])) {
+    for (const event of (turn.events || [])) {
+      const tsStr = cfg.timestamps ? formatTimeBrief(event.timestamp) : '';
 
-  const rendered = new Set();
-
-  for (const entry of entries) {
-    if (entry.type === 'response_item') {
-      const p = entry.payload;
-
-      if (p.type === 'message') {
-        const role = p.role || 'unknown';
-        const text = extractText(p.content);
-        if (!text) continue;
-        if (role === 'developer') {
-          if (!cfg.systemPrompt) continue;
-          lines.push(isMd ? `### SYSTEM\n\n${text}\n` : `[SYSTEM]\n${text}\n`);
-          continue;
-        }
+      if (event.type === 'message') {
+        const role = event.role || 'unknown';
+        if (role === 'system' && !cfg.systemPrompt) continue;
         if (role === 'user' && !cfg.userMsg) continue;
         if (role === 'assistant' && !cfg.assistantMsg) continue;
+        if (event.is_command) continue;
         const label = role.toUpperCase();
-        const tsStr = cfg.timestamps ? formatTimeBrief(entry.timestamp) : '';
         if (isMd) {
-          lines.push(`### ${label}` + (tsStr ? `  \n*${tsStr}*` : '') + '\n');
-          lines.push(text);
+          lines.push('### ' + label + (tsStr ? '  \n*' + tsStr + '*' : '') + '\n');
         } else {
-          lines.push(`[${label}]` + (tsStr ? ` (${tsStr})` : ''));
-          lines.push(text);
+          lines.push('[' + label + ']' + (tsStr ? ' (' + tsStr + ')' : ''));
+        }
+        lines.push(event.content || '');
+        lines.push('');
+      } else if (event.type === 'tool_call') {
+        if (!cfg.toolCalls) continue;
+        const name = event.tool_id || 'unknown';
+        const conf = event.confirmation?.state || '';
+        const confStr = conf && conf !== 'unknown' ? ' [' + conf + ']' : '';
+        if (isMd) {
+          lines.push('#### Tool: `' + name + '`' + confStr + (tsStr ? '  \n*' + tsStr + '*' : '') + '\n');
+          if (event.input?.command) lines.push('```\n' + event.input.command + '\n```');
+          else if (event.input?.raw) lines.push('```\n' + event.input.raw.slice(0, 2000) + '\n```');
+          if (cfg.toolOutput && event.output?.text) lines.push('**Output:**\n```\n' + event.output.text.slice(0, 2000) + '\n```');
+          if (event.output?.error) lines.push('**Error:** ' + event.output.error);
+        } else {
+          lines.push('[TOOL: ' + name + ']' + confStr + (tsStr ? ' (' + tsStr + ')' : ''));
+          if (event.input?.command) lines.push(event.input.command);
+          else if (event.input?.raw) lines.push(event.input.raw.slice(0, 2000));
+          if (cfg.toolOutput && event.output?.text) { lines.push('Output:'); lines.push(event.output.text.slice(0, 2000)); }
+          if (event.output?.error) lines.push('Error: ' + event.output.error);
         }
         lines.push('');
-
-      } else if (p.type === 'function_call') {
-        if (!cfg.toolCalls || rendered.has(p.call_id)) continue;
-        rendered.add(p.call_id);
-        const pair = callMap.get(p.call_id);
-        const call = pair?.call;
-        const output = pair?.output;
-        let name = call?.name || 'unknown_tool';
-        let args = '';
-        if (call?.arguments) {
-          try { const parsed = JSON.parse(call.arguments); args = parsed.cmd || JSON.stringify(parsed, null, 2); }
-          catch { args = call.arguments; }
-        }
-        const tsStr = cfg.timestamps ? formatTimeBrief(entry.timestamp) : '';
-        if (isMd) {
-          lines.push(`#### Tool: \`${name}\`` + (tsStr ? `  \n*${tsStr}*` : '') + '\n');
-          if (args) lines.push('```\n' + args + '\n```');
-          if (cfg.toolOutput && output) lines.push('**Output:**\n```\n' + String(output.output || '').slice(0, 2000) + '\n```');
-        } else {
-          lines.push(`[TOOL: ${name}]` + (tsStr ? ` (${tsStr})` : ''));
-          if (args) lines.push(args);
-          if (cfg.toolOutput && output) { lines.push('Output:'); lines.push(String(output.output || '').slice(0, 2000)); }
-        }
-        lines.push('');
-
-      } else if (p.type === 'reasoning') {
+      } else if (event.type === 'thinking') {
         if (!cfg.reasoning) continue;
-        let summary = '';
-        if (p.content && Array.isArray(p.content)) {
-          for (const c of p.content) { if (c.type === 'summary_text') summary += c.text + '\n'; }
+        if (event.content) {
+          const snippet = event.content.trim().slice(0, 500);
+          if (isMd) lines.push('> *Thinking:* ' + snippet + '\n');
+          else lines.push('[THINKING] ' + snippet + '\n');
         }
-        if (summary) {
-          lines.push(isMd ? `> *🧠 Reasoning:* ${summary.trim()}\n` : `[REASONING] ${summary.trim()}\n`);
-        }
+      } else if (event.type === 'status') {
+        if (!cfg.events) continue;
+        const label = event.label || event.kind || '';
+        if (isMd) lines.push('> *' + label + (tsStr ? ' · ' + tsStr : '') + '*\n');
+        else lines.push('--- ' + label + (tsStr ? ' · ' + tsStr : '') + ' ---\n');
       }
-
-    } else if (entry.type === 'event_msg') {
-      if (!cfg.events) continue;
-      const etype = entry.payload.type;
-      if (etype === 'token_count') continue;
-      const tsStr = cfg.timestamps ? ` · ${formatTimeBrief(entry.timestamp)}` : '';
-      lines.push(isMd ? `> *— ${etype.replace(/_/g, ' ')}${tsStr} —*\n` : `--- ${etype.replace(/_/g, ' ')}${tsStr} ---\n`);
     }
   }
 
@@ -135,3 +111,4 @@ export function downloadFile(filename, content) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+

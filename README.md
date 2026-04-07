@@ -38,29 +38,32 @@ chat-cabinet/
 ├── server/
 │   ├── sessions.js            # Session discovery orchestrator & loader
 │   ├── utils.js               # Shared helpers (findJsonlFiles, path decoding)
-│   └── sources/
-│       ├── codex.js           # Codex CLI session parser
-│       ├── vscode-copilot.js  # VS Code Copilot debug-logs parser
-│       ├── vscode-chat.js     # VS Code chatSessions parser
-│       ├── claude.js          # Claude Code session parser
-│       └── cursor.js          # Cursor agent transcript parser
+│   ├── sources/               # Session discovery (metadata only, fast)
+│   │   ├── codex.js
+│   │   ├── vscode-copilot.js
+│   │   ├── vscode-chat.js
+│   │   ├── claude.js
+│   │   └── cursor.js
+│   └── convert/               # Raw → Chat Cabinet format converters
+│       ├── codex.js
+│       ├── vscode-copilot.js
+│       ├── vscode-chat.js
+│       ├── claude.js
+│       └── cursor.js
 ├── public/
-│   ├── index.html             # Main HTML page
+│   ├── index.html
 │   ├── app.js                 # Frontend entry (state, routing, events)
-│   ├── style.css              # Styles (dark theme)
+│   ├── style.css
 │   └── js/
 │       ├── api.js             # Fetch helpers
 │       ├── sources.js         # Source labels & colors
 │       ├── sidebar.js         # Source chips & session list
-│       ├── utils.js           # Shared utilities (escapeHtml, markdown, etc.)
+│       ├── utils.js           # Shared utilities
 │       ├── export.js          # Export to .md / .txt
 │       └── renderers/
-│           ├── blocks.js      # Shared UI blocks (messages, tools, events)
-│           ├── codex.js       # Codex format renderer
-│           ├── vscode-copilot.js  # VS Code debug-logs renderer
-│           ├── vscode-chat.js     # VS Code chatSessions renderer
-│           ├── claude.js      # Claude Code renderer
-│           └── cursor.js      # Cursor renderer
+│           └── unified.js     # Single renderer for Chat Cabinet format
+├── docs/
+│   └── format.md              # Chat Cabinet format specification
 ├── package.json
 └── LICENSE
 ```

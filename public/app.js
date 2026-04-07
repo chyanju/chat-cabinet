@@ -1,18 +1,14 @@
 import { fetchSessions, fetchSession } from './js/api.js';
 import { escapeHtml, formatTime } from './js/utils.js';
-import { SOURCE_LABELS, getSourceKey } from './js/sources.js';
+import { SOURCE_LABELS } from './js/sources.js';
 import { renderSourceChips, renderSessionList } from './js/sidebar.js';
-import { renderCodexSession } from './js/renderers/codex.js';
-import { renderVSCodeSession } from './js/renderers/vscode-copilot.js';
-import { renderVSCodeChatSession } from './js/renderers/vscode-chat.js';
-import { renderClaudeCodeSession } from './js/renderers/claude.js';
-import { renderCursorSession } from './js/renderers/cursor.js';
+import { renderSession } from './js/renderers/unified.js';
 import { entriesToText, downloadFile } from './js/export.js';
 
 // ── State ────────────────────────────────────────────────
 let sessions = [];
 let currentPath = null;
-let currentEntries = null;
+let currentSession = null;
 let currentMeta = null;
 const activeSourceFilters = new Set();
 
@@ -50,66 +46,58 @@ async function loadSessions() {
 
 async function openSession(s) {
   currentPath = s.filePath;
+  currentMeta = s;
   refreshUI();
 
   placeholder.classList.add('hidden');
   sessionDetail.classList.remove('hidden');
-  conversation.innerHTML = '<div class="loading"><div class="spinner"></div>Loading session…</div>';
+  conversation.innerHTML = '<div class="loading"><div class="spinner"></div>Loading session\u2026</div>';
   sessionHeader.innerHTML = '';
 
-  const entries = await fetchSession(s.filePath);
-  currentEntries = entries;
-  currentMeta = s;
+  const session = await fetchSession(s.filePath);
+  currentSession = session;
   exportBar.classList.remove('hidden');
-  renderDetail(entries, s);
+  renderDetail(session, s);
 }
 
-function renderDetail(entries, meta) {
-  const srcKey = getSourceKey(meta);
-  const srcLabel = SOURCE_LABELS[srcKey] || srcKey;
+function renderDetail(session, meta) {
+  const srcTool = session.source?.tool || meta.source_key || '';
+  const srcLabel = SOURCE_LABELS[meta.source_key] || SOURCE_LABELS[srcTool] || srcTool;
+  const model = session.model?.name || session.model?.id || meta.model_provider || 'unknown';
+  const cwd = (session.workspace?.cwd || meta.cwd || '').replace(/^\/Users\/[^/]+/, '~');
+  const title = session.title || meta.title || '';
+
   sessionHeader.innerHTML = `
-    <span class="meta-chip"><strong>ID</strong> ${meta.id}</span>
-    <span class="meta-chip"><strong>Time</strong> ${formatTime(meta.timestamp)}</span>
-    <span class="meta-chip"><strong>Model</strong> ${escapeHtml(meta.model_provider || 'unknown')}</span>
+    <span class="meta-chip"><strong>ID</strong> ${session.session_id || meta.id}</span>
+    <span class="meta-chip"><strong>Time</strong> ${formatTime(session.created_at || meta.timestamp)}</span>
+    <span class="meta-chip"><strong>Model</strong> ${escapeHtml(model)}</span>
     <span class="meta-chip"><strong>Source</strong> ${escapeHtml(srcLabel)}</span>
-    <span class="meta-chip"><strong>CWD</strong> ${escapeHtml((meta.cwd || '').replace(/^\/Users\/[^/]+/, '~'))}</span>
-    ${meta.title ? `<span class="meta-chip"><strong>Title</strong> ${escapeHtml(meta.title)}</span>` : ''}
-    ${meta.cli_version && meta.cli_version !== srcLabel ? `<span class="meta-chip"><strong>CLI</strong> ${escapeHtml(meta.cli_version)}</span>` : ''}
+    <span class="meta-chip"><strong>CWD</strong> ${escapeHtml(cwd)}</span>
+    ${title ? `<span class="meta-chip"><strong>Title</strong> ${escapeHtml(title)}</span>` : ''}
   `;
 
   conversation.innerHTML = '';
-
-  const renderers = {
-    'codex':               renderCodexSession,
-    'vscode-copilot':      renderVSCodeSession,
-    'vscode-chat-session': renderVSCodeChatSession,
-    'claude-code':         renderClaudeCodeSession,
-    'cursor':              renderCursorSession,
-  };
-
-  const render = renderers[meta.format] || renderCodexSession;
-  render(conversation, entries);
+  renderSession(conversation, session);
 }
 
 // ── Events ───────────────────────────────────────────────
 searchBox.addEventListener('input', refreshUI);
 refreshBtn.addEventListener('click', loadSessions);
-
 exportCfgBtn.addEventListener('click', () => exportPanel.classList.toggle('hidden'));
 
 exportMdBtn.addEventListener('click', () => {
-  if (!currentEntries || !currentMeta) return;
-  const text = entriesToText(currentEntries, currentMeta, 'md');
+  if (!currentSession || !currentMeta) return;
+  const text = entriesToText(currentSession, currentMeta, 'md');
   const ts = (currentMeta.timestamp || '').replace(/[:.]/g, '-').slice(0, 19);
-  downloadFile(`codex-session-${ts}.md`, text);
+  downloadFile(`session-${ts}.md`, text);
   exportPanel.classList.add('hidden');
 });
 
 exportTxtBtn.addEventListener('click', () => {
-  if (!currentEntries || !currentMeta) return;
-  const text = entriesToText(currentEntries, currentMeta, 'txt');
+  if (!currentSession || !currentMeta) return;
+  const text = entriesToText(currentSession, currentMeta, 'txt');
   const ts = (currentMeta.timestamp || '').replace(/[:.]/g, '-').slice(0, 19);
-  downloadFile(`codex-session-${ts}.txt`, text);
+  downloadFile(`session-${ts}.txt`, text);
   exportPanel.classList.add('hidden');
 });
 

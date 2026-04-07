@@ -23,9 +23,12 @@ const server = http.createServer((req, res) => {
       return;
     }
     try {
-      const entries = loadSession(fp);
+      // Find the session metadata to pass format info to the converter
+      const allSessions = listAllSessions();
+      const meta = allSessions.find(s => s.filePath === fp) || null;
+      const session = loadSession(fp, meta);
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(entries));
+      res.end(JSON.stringify(session));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
