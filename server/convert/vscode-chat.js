@@ -36,8 +36,8 @@ function convertVSCodeChatSession(entries, meta) {
       name: modelMeta.name || null,
     },
     config: {
-      permission_level: session.inputState?.permissionLevel || null,
-      mode: session.inputState?.mode?.id || null,
+      permission_mode: session.inputState?.permissionLevel || null,
+      agent_mode: session.inputState?.mode?.id || null,
     },
     turns: [],
   };

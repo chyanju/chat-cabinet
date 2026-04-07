@@ -1,6 +1,6 @@
 # Chat Cabinet
 
-A local web-based viewer for browsing AI coding assistant session logs. It aggregates and displays conversation histories from **OpenAI Codex CLI** and **VS Code Copilot Chat** in a unified interface.
+A local web-based viewer for browsing AI coding assistant session logs. It aggregates and displays conversation histories from **Codex CLI**, **VS Code Copilot Chat**, **Claude Code**, and **Cursor** in a unified interface.
 
 ## Features
 

@@ -15,7 +15,19 @@ export function escapeHtml(str) {
 
 export function renderMarkdown(text) {
   if (typeof marked !== 'undefined' && marked.parse) {
-    return marked.parse(text, { breaks: true });
+    const html = marked.parse(text, { breaks: true });
+    // Strip dangerous tags — allow safe HTML only
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    for (const el of div.querySelectorAll('script,iframe,object,embed,form,input,textarea,button')) {
+      el.remove();
+    }
+    for (const el of div.querySelectorAll('*')) {
+      for (const attr of [...el.attributes]) {
+        if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+      }
+    }
+    return div.innerHTML;
   }
   return escapeHtml(text).replace(/\n/g, '<br>');
 }
@@ -24,7 +36,7 @@ export function formatTime(ts) {
   if (!ts) return '';
   try {
     const d = new Date(ts);
-    return d.toLocaleString('zh-CN', {
+    return d.toLocaleString(undefined, {
       year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit', second: '2-digit',
       hour12: false,
@@ -36,7 +48,7 @@ export function formatTimeBrief(ts) {
   if (!ts) return '';
   try {
     const d = new Date(ts);
-    return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   } catch { return ''; }
 }
 
@@ -77,16 +89,4 @@ export function addCollapsible(block, title, fullText, startClosed = false) {
   `;
   setupCollapse(wrapper);
   block.appendChild(wrapper);
-}
-
-export function extractText(content) {
-  if (!content) return '';
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    return content
-      .filter(c => c.type === 'input_text' || c.type === 'output_text' || c.type === 'text')
-      .map(c => c.text || '')
-      .join('\n');
-  }
-  return '';
 }

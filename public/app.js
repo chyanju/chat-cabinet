@@ -55,6 +55,10 @@ async function openSession(s) {
   sessionHeader.innerHTML = '';
 
   const session = await fetchSession(s.filePath);
+  if (session.error) {
+    conversation.innerHTML = `<div class="loading">${escapeHtml(session.error)}</div>`;
+    return;
+  }
   currentSession = session;
   exportBar.classList.remove('hidden');
   renderDetail(session, s);
@@ -68,7 +72,7 @@ function renderDetail(session, meta) {
   const title = session.title || meta.title || '';
 
   sessionHeader.innerHTML = `
-    <span class="meta-chip"><strong>ID</strong> ${session.session_id || meta.id}</span>
+    <span class="meta-chip"><strong>ID</strong> ${escapeHtml(session.session_id || meta.id)}</span>
     <span class="meta-chip"><strong>Time</strong> ${formatTime(session.created_at || meta.timestamp)}</span>
     <span class="meta-chip"><strong>Model</strong> ${escapeHtml(model)}</span>
     <span class="meta-chip"><strong>Source</strong> ${escapeHtml(srcLabel)}</span>

@@ -4,7 +4,7 @@
  * This single renderer handles all source formats — the server-side converters
  * have already normalized everything into the Chat Cabinet JSON structure.
  */
-import { escapeHtml, formatTime, formatTimeBrief, renderMarkdown, genId, setupCollapse, createBlock } from '../utils.js';
+import { escapeHtml, formatTime, formatTimeBrief, renderMarkdown, genId, setupCollapse, createBlock, addCollapsible } from '../utils.js';
 
 /**
  * Render a full Chat Cabinet session into the conversation container.
@@ -291,20 +291,4 @@ function renderStatus(conversation, event) {
   div.className = 'msg-event';
   div.innerHTML = `<span class="event-pill">${escapeHtml(label)} · ${formatTimeBrief(ts)}</span>`;
   conversation.appendChild(div);
-}
-
-// ── Helpers ──────────────────────────────────────────────
-
-function addCollapsible(block, title, fullText, startClosed = false) {
-  const id = genId();
-  const wrapper = document.createElement('div');
-  wrapper.style.padding = '0 16px 12px';
-  wrapper.innerHTML = `
-    <div class="collapse-toggle" data-target="${id}" style="font-size:11px;color:var(--accent);cursor:pointer;margin-top:6px">${escapeHtml(title)}</div>
-    <div class="collapsible-content ${startClosed ? '' : 'open'}" id="${id}">
-      <pre class="tool-cmd" style="margin-top:6px;max-height:500px">${escapeHtml(fullText)}</pre>
-    </div>
-  `;
-  setupCollapse(wrapper);
-  block.appendChild(wrapper);
 }

@@ -70,7 +70,7 @@ export function renderSessionList(sessions, { filter = '', activeSourceFilters, 
       <div class="session-item-time">${ts} ${sourceBadge}${badge}</div>
       ${title ? `<div class="session-item-title">${escapeHtml(title)}</div>` : ''}
       <div class="session-item-cwd">${escapeHtml(shortCwd)}</div>
-      <div class="session-item-id">${s.id}</div>
+      <div class="session-item-id">${escapeHtml(s.id)}</div>
     `;
 
     li.addEventListener('click', () => onSelect(s));

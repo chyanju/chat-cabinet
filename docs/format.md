@@ -70,8 +70,10 @@ Optional session-level configuration.
 | `approval_policy` | string | `on-request`, `auto-approve` (Codex) |
 | `sandbox` | object | `{ type, network_access }` (Codex) |
 | `effort` | string | Reasoning effort level (Codex, Claude) |
-| `permission_mode` | string | `default`, `acceptEdits`, `plan` (Claude) |
+| `permission_mode` | string | `default`, `acceptEdits`, `plan` (Claude, VS Code) |
 | `personality` | string | Agent personality (Codex) |
+| `agent_mode` | string | `agent`, `edit`, `ask` (VS Code) |
+| `editor_version` | string | Editor version string (VS Code debug-logs) |
 
 ---
 
@@ -226,9 +228,9 @@ Lifecycle and metadata events.
 
 | Kind | Description | Details fields |
 |------|-------------|----------------|
-| `session_start` | Session began | `tool_version`, `editor_version` |
-| `turn_start` | Turn began | `turn_id` |
-| `turn_end` | Turn ended | `turn_id` |
+| `session_start` | Session began | `tool_version`, `editor_version`, `permission_mode` |
+| `turn_start` | Turn began | `turn_id`, `approval_policy`, `sandbox`, `model`, `effort` |
+| `turn_end` | Turn ended | `turn_id`, `duration_ms` |
 | `turn_aborted` | User interrupted | `reason` |
 | `task_started` | Task lifecycle | `mode` |
 | `task_complete` | Task finished | |
@@ -238,6 +240,9 @@ Lifecycle and metadata events.
 | `thread_rolled_back` | User rolled back turns | `num_turns` |
 | `discovery` | Resource discovery | `category`, `description` |
 | `progress` | Progress update | `title` |
+| `confirmation` | Continuation prompt | `message`, `used` |
+| `elicitation` | Question to user | `state`, `hidden` |
+| `error` | Error occurred | `message`, `code`, `isQuotaExceeded`, `isRateLimited` |
 
 ---
 
