@@ -2,36 +2,119 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { listAllSessions, loadSession } = require('./server/sessions');
+const { listTags, createTag, deleteTag, assignTag, unassignTag, updateTag } = require('./server/tags');
+const { ensureCabinetDir } = require('./server/storage');
 
 const PORT = 3456;
 
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+// Ensure ~/.cabinet/ exists on startup
+ensureCabinetDir();
 
-  // ── API routes ───────────────────────────────────────
-  if (url.pathname === '/api/sessions') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(listAllSessions()));
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > 1e6) { req.destroy(); reject(new Error('Body too large')); }
+    });
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); }
+      catch { reject(new Error('Invalid JSON')); }
+    });
+    req.on('error', reject);
+  });
+}
+
+function jsonResponse(res, status, data) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(data));
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const method = req.method;
+
+  // ── Session API ──────────────────────────────────────
+  if (url.pathname === '/api/sessions' && method === 'GET') {
+    jsonResponse(res, 200, listAllSessions());
     return;
   }
 
-  if (url.pathname === '/api/session') {
+  if (url.pathname === '/api/session' && method === 'GET') {
     const fp = url.searchParams.get('path');
     if (!fp) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Missing path parameter' }));
+      jsonResponse(res, 400, { error: 'Missing path parameter' });
       return;
     }
     try {
-      // Find the session metadata to pass format info to the converter
       const allSessions = listAllSessions();
       const meta = allSessions.find(s => s.filePath === fp) || null;
       const session = loadSession(fp, meta);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(session));
+      jsonResponse(res, 200, session);
     } catch (e) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: e.message }));
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // ── Tag API ──────────────────────────────────────────
+  if (url.pathname === '/api/tags' && method === 'GET') {
+    jsonResponse(res, 200, listTags());
+    return;
+  }
+
+  if (url.pathname === '/api/tags' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const tag = createTag(body.name, body.color);
+      jsonResponse(res, 201, tag);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/tags/update' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const tag = updateTag(body.id, body);
+      if (!tag) { jsonResponse(res, 404, { error: 'Tag not found' }); return; }
+      jsonResponse(res, 200, tag);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/tags/delete' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      deleteTag(body.id);
+      jsonResponse(res, 200, { ok: true });
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/tags/assign' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      assignTag(body.tag_id, body.session_path);
+      jsonResponse(res, 200, { ok: true });
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/tags/unassign' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      unassignTag(body.tag_id, body.session_path);
+      jsonResponse(res, 200, { ok: true });
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
     }
     return;
   }

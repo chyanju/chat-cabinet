@@ -11,13 +11,22 @@
 <body>
 
 <div id="app">
-  <!-- Sidebar: session list -->
+  <!-- Row 1: Menu Bar -->
+  <div id="menubar"></div>
+
+  <!-- Row 2, Col 1: Activity Bar -->
+  <div id="activity-bar"></div>
+
+  <!-- Row 2, Col 2: Sidebar (session list) -->
   <aside id="sidebar">
     <div class="sidebar-header">
       <h1><img src="cabinet.svg" alt="" class="sidebar-icon">Chat Cabinet</h1>
-      <button id="refreshBtn" title="Refresh">↻</button>
+      <button id="refreshBtn" title="Refresh">&#x21bb;</button>
     </div>
-    <input id="searchBox" type="text" placeholder="Search sessions…">
+    <div class="search-wrap">
+      <input id="searchBox" type="text" placeholder="Search sessions…">
+      <button id="searchClear" class="search-clear hidden" title="Clear">&times;</button>
+    </div>
     <div id="sourceFilter" class="source-filter">
       <div class="filter-label">Source</div>
       <div id="sourceChips" class="filter-chips"></div>
@@ -25,35 +34,25 @@
     <ul id="sessionList"></ul>
   </aside>
 
-  <!-- Main: session detail -->
-  <main id="detail">
-    <div id="placeholder">
-      <div class="placeholder-icon"><img src="cabinet.svg" alt="Chat Cabinet" style="width:64px;height:64px;opacity:0.5"></div>
-      <p>Select a session from the sidebar to view</p>
-    </div>
-    <div id="sessionDetail" class="hidden">
-      <header id="sessionHeader"></header>
-      <div id="exportBar" class="hidden">
-        <button id="exportCfgBtn" title="Export options">Export ▾</button>
+  <!-- Row 2, Col 3: Editor Area (tabs + content) -->
+  <div id="editor-area">
+    <div id="tab-bar"></div>
+    <div id="editor-content">
+      <div id="placeholder">
+        <div class="placeholder-icon"><img src="cabinet.svg" alt="Chat Cabinet" style="width:64px;height:64px;opacity:0.5"></div>
+        <p>Select a session from the sidebar to view</p>
       </div>
-      <div id="exportPanel" class="hidden">
-        <div class="export-panel-title">Export Options</div>
-        <label><input type="checkbox" id="expUserMsg" checked> User messages</label>
-        <label><input type="checkbox" id="expAssistantMsg" checked> Assistant messages</label>
-        <label><input type="checkbox" id="expToolCalls" checked> Tool calls (commands)</label>
-        <label><input type="checkbox" id="expToolOutput"> Tool output</label>
-        <label><input type="checkbox" id="expReasoning"> Reasoning</label>
-        <label><input type="checkbox" id="expSystemPrompt"> System prompt (full)</label>
-        <label><input type="checkbox" id="expEvents"> Events (task_started, etc.)</label>
-        <label><input type="checkbox" id="expTimestamps" checked> Timestamps</label>
-        <div class="export-panel-actions">
-          <button id="exportMd">Download .md</button>
-          <button id="exportTxt">Download .txt</button>
-        </div>
+      <div id="sessionDetail" class="hidden">
+        <div id="conversation"></div>
       </div>
-      <div id="conversation"></div>
     </div>
-  </main>
+  </div>
+
+  <!-- Row 2, Col 4: Detail Panel -->
+  <div id="detail-panel"></div>
+
+  <!-- Row 3: Status Bar -->
+  <div id="statusbar"></div>
 </div>
 
 <script src="app.js" type="module"></script>

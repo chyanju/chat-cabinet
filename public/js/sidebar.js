@@ -40,6 +40,7 @@ export function renderSourceChips(sessions, activeSourceFilters, { sourceChipsEl
 
 /**
  * Render the session list in the sidebar.
+ * onSelect(session, { preview: boolean }) - single click = preview, double click = pinned
  */
 export function renderSessionList(sessions, { filter = '', activeSourceFilters, currentPath, sessionListEl, onSelect }) {
   const q = filter.toLowerCase();
@@ -56,7 +57,7 @@ export function renderSessionList(sessions, { filter = '', activeSourceFilters, 
     if (s.filePath === currentPath) li.classList.add('active');
 
     const ts = s.timestamp ? formatTime(s.timestamp) : 'Unknown time';
-    const shortCwd = s.cwd ? s.cwd.replace(/^\/Users\/[^/]+/, '~') : '';
+    const shortCwd = s.cwd ? s.cwd.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~') : '';
     const srcLabel = SOURCE_LABELS[srcKey] || srcKey;
     const srcColor = SOURCE_COLORS[srcKey] || '#8b949e';
     let badge = '';
@@ -73,7 +74,20 @@ export function renderSessionList(sessions, { filter = '', activeSourceFilters, 
       <div class="session-item-id">${escapeHtml(s.id)}</div>
     `;
 
-    li.addEventListener('click', () => onSelect(s));
+    // Single click = preview tab (debounced for dblclick)
+    // Double click = pinned tab
+    let clickTimer = null;
+    li.addEventListener('click', () => {
+      if (clickTimer) clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => {
+        onSelect(s, { preview: true });
+      }, 200);
+    });
+    li.addEventListener('dblclick', () => {
+      if (clickTimer) clearTimeout(clickTimer);
+      onSelect(s, { preview: false });
+    });
+
     sessionListEl.appendChild(li);
   }
 }
