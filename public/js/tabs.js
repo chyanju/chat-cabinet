@@ -4,7 +4,8 @@
  * State is managed externally (in app.js). This module provides pure functions
  * that take state in and return new state out, plus a DOM renderer.
  */
-import { escapeHtml, formatTimeBrief } from './utils.js';
+import { escapeHtml, formatTabDate } from './utils.js';
+import { SOURCE_ICONS, SOURCE_COLORS, getSourceKey } from './sources.js';
 
 /**
  * Open or activate a tab.
@@ -56,7 +57,6 @@ export function closeTab(openTabs, activeTabIndex, index) {
   if (updated.length === 0) {
     newActive = -1;
   } else if (index === activeTabIndex) {
-    // Activate the tab to the right, or the last tab
     newActive = Math.min(index, updated.length - 1);
   } else if (index < activeTabIndex) {
     newActive = activeTabIndex - 1;
@@ -86,35 +86,33 @@ export function renderTabBar(tabBarEl, openTabs, activeTabIndex, { onActivate, o
     const div = document.createElement('div');
     div.className = 'tab-item' + (i === activeTabIndex ? ' active' : '') + (tab.isPreview ? ' preview' : '');
 
-    // Tab label: use title, or formatted timestamp, or session ID
     const meta = tab.sessionMeta;
-    const label = meta.title || (meta.timestamp ? formatTimeBrief(meta.timestamp) : null) || meta.id?.slice(0, 8) || 'Session';
+    const label = meta.title || formatTabDate(meta.timestamp) || meta.id?.slice(0, 8) || 'Session';
+    const srcKey = getSourceKey(meta);
+    const iconSvg = SOURCE_ICONS[srcKey] || '';
+    const iconColor = SOURCE_COLORS[srcKey] || '';
 
-    const dot = tab.isPreview ? '<span class="tab-preview-dot" title="Preview">&#x25CF;</span>' : '';
     div.innerHTML = `
-      ${dot}<span class="tab-label" title="${escapeHtml(meta.cwd || meta.id || '')}">${escapeHtml(label)}</span>
+      <span class="tab-icon"${iconColor ? ` style="color:${iconColor}"` : ''}>${iconSvg}</span>
+      <span class="tab-label" title="${escapeHtml(meta.cwd || meta.id || '')}">${escapeHtml(label)}</span>
       <button class="tab-close" title="Close">&times;</button>
     `;
 
-    // Click to activate
     div.addEventListener('click', (e) => {
       if (e.target.closest('.tab-close')) return;
       onActivate(i);
     });
 
-    // Double-click to pin
     div.addEventListener('dblclick', (e) => {
       if (e.target.closest('.tab-close')) return;
       onPin(i);
     });
 
-    // Close button
     div.querySelector('.tab-close').addEventListener('click', (e) => {
       e.stopPropagation();
       onClose(i);
     });
 
-    // Middle-click to close
     div.addEventListener('auxclick', (e) => {
       if (e.button === 1) {
         e.preventDefault();

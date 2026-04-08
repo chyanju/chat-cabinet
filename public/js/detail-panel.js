@@ -7,15 +7,23 @@ import { SOURCE_LABELS } from './sources.js';
 let panelEl = null;
 let isCollapsed = false;
 let resizing = false;
+let onToggleCb = null;
+
+export function toggleDetailPanel() {
+  if (!panelEl) return;
+  isCollapsed = !isCollapsed;
+  document.getElementById('app').classList.toggle('detail-collapsed', isCollapsed);
+  if (onToggleCb) onToggleCb(isCollapsed);
+}
 
 export function initDetailPanel(el, { onToggle }) {
   panelEl = el;
+  onToggleCb = onToggle;
 
   // Build panel structure
   el.innerHTML = `
     <div class="dp-header">
       <span class="dp-title">Details</span>
-      <button class="dp-toggle" title="Toggle detail panel">&rsaquo;</button>
     </div>
     <div class="dp-content">
       <div class="dp-section dp-metadata"></div>
@@ -46,14 +54,6 @@ export function initDetailPanel(el, { onToggle }) {
     </div>
     <div class="dp-resize-handle"></div>
   `;
-
-  // Toggle collapse
-  el.querySelector('.dp-toggle').addEventListener('click', () => {
-    isCollapsed = !isCollapsed;
-    document.getElementById('app').classList.toggle('detail-collapsed', isCollapsed);
-    el.querySelector('.dp-toggle').innerHTML = isCollapsed ? '&lsaquo;' : '&rsaquo;';
-    if (onToggle) onToggle(isCollapsed);
-  });
 
   // Resize handle
   const handle = el.querySelector('.dp-resize-handle');

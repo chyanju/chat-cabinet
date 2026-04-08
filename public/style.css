@@ -49,7 +49,7 @@ body {
 }
 
 #app.detail-collapsed {
-  grid-template-columns: var(--activity-bar-w) var(--sidebar-w) 1fr 24px;
+  grid-template-columns: var(--activity-bar-w) var(--sidebar-w) 1fr 0px;
 }
 
 /* ── Menu Bar ───────────────────────────── */
@@ -64,6 +64,43 @@ body {
   font-size: 12px;
   color: var(--text-muted);
   z-index: 50;
+}
+
+.menubar-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 16px;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 12px;
+  user-select: none;
+}
+.menubar-brand-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.menubar-panel-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+.menubar-panel-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.menubar-panel-toggle svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* ── Activity Bar ───────────────────────── */
@@ -118,54 +155,20 @@ body {
   overflow: hidden;
 }
 
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-.sidebar-header h1 {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sidebar-icon {
-  width: 18px;
-  height: 18px;
-}
-
-#refreshBtn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 16px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-#refreshBtn:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-}
-
 .search-wrap {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 8px 10px;
+}
+.search-input-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
 }
 #searchBox {
   width: 100%;
-  padding: 6px 28px 6px 10px;
+  padding: 6px 26px 6px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--bg);
@@ -192,6 +195,26 @@ body {
   line-height: 1;
 }
 .search-clear:hover { color: var(--text); background: var(--surface-hover); }
+
+#refreshBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+#refreshBtn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
 
 .filter-count {
   padding: 4px 14px;
@@ -377,15 +400,19 @@ body {
 .tab-item.preview .tab-label {
   font-style: italic;
 }
+.tab-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.tab-icon svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
 .tab-label {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.tab-preview-dot {
-  font-size: 8px;
-  color: var(--text-muted);
-  margin-right: 4px;
-  vertical-align: middle;
 }
 .tab-close {
   display: flex;
@@ -453,16 +480,10 @@ body {
 
 #app.detail-collapsed #detail-panel {
   overflow: hidden;
-  border-left: 1px solid var(--border);
+  border-left: none;
 }
 #app.detail-collapsed .dp-content { display: none; }
-#app.detail-collapsed .dp-header {
-  padding: 0;
-  border-bottom: none;
-  justify-content: center;
-  height: 100%;
-}
-#app.detail-collapsed .dp-title { display: none; }
+#app.detail-collapsed .dp-header { display: none; }
 #app.detail-collapsed .dp-resize-handle { display: none; }
 
 .dp-header {
@@ -482,20 +503,6 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-muted);
-}
-.dp-toggle {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 16px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: all 0.1s;
-}
-.dp-toggle:hover {
-  background: var(--surface-hover);
-  color: var(--text);
 }
 
 .dp-content {

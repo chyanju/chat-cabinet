@@ -7,7 +7,7 @@ import { entriesToText, downloadFile } from './js/export.js';
 import { initMenuBar } from './js/menubar.js';
 import { initActivityBar } from './js/activity-bar.js';
 import { openTab, closeTab, pinTab, renderTabBar } from './js/tabs.js';
-import { initDetailPanel, renderDetailPanel, renderDetailTags } from './js/detail-panel.js';
+import { initDetailPanel, renderDetailPanel, renderDetailTags, toggleDetailPanel } from './js/detail-panel.js';
 import { fetchTags, createTag as apiCreateTag, assignTag as apiAssignTag, unassignTag as apiUnassignTag } from './js/tag-api.js';
 
 // ── Tag color palette ────────────────────────────────────
@@ -365,8 +365,8 @@ document.getElementById('exportTxt')?.addEventListener('click', () => doExport('
 document.addEventListener('cabinet:close-tab', () => {
   if (activeTabIndex >= 0) doCloseTab(activeTabIndex);
 });
-document.addEventListener('cabinet:export', (e) => {
-  doExport(e.detail?.format || 'md');
+document.addEventListener('cabinet:toggle-detail', () => {
+  toggleDetailPanel();
 });
 
 // Keyboard shortcuts

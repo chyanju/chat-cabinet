@@ -1,5 +1,5 @@
 /**
- * Menu Bar — File and Help dropdown menus.
+ * Menu Bar — Brand, File/Help dropdowns, and panel toggle.
  */
 
 const MENUS = [
@@ -7,9 +7,6 @@ const MENUS = [
     label: 'File',
     items: [
       { label: 'Close Tab', shortcut: 'Ctrl+W', action: 'close-tab' },
-      { type: 'separator' },
-      { label: 'Export as Markdown', action: 'export-md' },
-      { label: 'Export as Text', action: 'export-txt' },
     ],
   },
   {
@@ -30,6 +27,13 @@ export function initMenuBar(containerEl) {
   menuBarEl = containerEl;
   containerEl.innerHTML = '';
 
+  // Brand
+  const brand = document.createElement('div');
+  brand.className = 'menubar-brand';
+  brand.innerHTML = `<img src="cabinet.svg" alt="" class="menubar-brand-icon"><span>Chat Cabinet</span>`;
+  containerEl.appendChild(brand);
+
+  // Menu items
   for (let i = 0; i < MENUS.length; i++) {
     const menu = MENUS[i];
     const btn = document.createElement('div');
@@ -82,6 +86,17 @@ export function initMenuBar(containerEl) {
     containerEl.appendChild(btn);
   }
 
+  // Detail panel toggle (right-aligned, like VS Code sidebar toggle)
+  const toggle = document.createElement('button');
+  toggle.className = 'menubar-panel-toggle';
+  toggle.title = 'Toggle Detail Panel';
+  toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>`;
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.dispatchEvent(new CustomEvent('cabinet:toggle-detail'));
+  });
+  containerEl.appendChild(toggle);
+
   // Close on outside click
   document.addEventListener('click', () => {
     if (menuOpen) closeAllMenus();
@@ -114,12 +129,6 @@ function handleAction(action) {
   switch (action) {
     case 'close-tab':
       document.dispatchEvent(new CustomEvent('cabinet:close-tab'));
-      break;
-    case 'export-md':
-      document.dispatchEvent(new CustomEvent('cabinet:export', { detail: { format: 'md' } }));
-      break;
-    case 'export-txt':
-      document.dispatchEvent(new CustomEvent('cabinet:export', { detail: { format: 'txt' } }));
       break;
     case 'github':
       window.open('https://github.com', '_blank');
