@@ -90,8 +90,8 @@ export function entriesToText(session, meta, format, cfg) {
   return lines.join('\n');
 }
 
-export function downloadFile(filename, content) {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+export function downloadFile(filename, content, type = 'text/plain;charset=utf-8') {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -100,4 +100,8 @@ export function downloadFile(filename, content) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export function sessionToJson(session) {
+  return JSON.stringify(session, null, 2);
 }

@@ -18,6 +18,7 @@
       <div v-if="!tabsStore.activeTab" class="placeholder">
         <div class="placeholder-icon">&#128193;</div>
         <div>Select a session to view</div>
+        <button class="placeholder-import" @click="onImport">or import a .json file</button>
       </div>
 
       <!-- Loading -->
@@ -42,6 +43,7 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
+import { triggerImport } from '../../lib/import.js';
 import TabItem from './TabItem.vue';
 import ConversationView from '../conversation/ConversationView.vue';
 
@@ -49,6 +51,10 @@ import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 
 const tabsStore = useTabsStore();
 const editorContentEl = ref(null);
+
+function onImport() {
+  triggerImport(tabsStore);
+}
 
 // Save/restore scroll position on tab switch
 watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {
@@ -102,6 +108,21 @@ watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {
   font-size: 48px;
   margin-bottom: 12px;
   opacity: 0.5;
+}
+.placeholder-import {
+  margin-top: 12px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.placeholder-import:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
 }
 .loading {
   display: flex;

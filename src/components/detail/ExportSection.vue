@@ -14,6 +14,7 @@
     <div class="dp-export-actions">
       <sl-button size="small" variant="primary" outline @click="doExport('md')">Export .md</sl-button>
       <sl-button size="small" variant="primary" outline @click="doExport('txt')">Export .txt</sl-button>
+      <sl-button size="small" variant="primary" outline @click="doExportJson()">Export .json</sl-button>
     </div>
   </div>
 </template>
@@ -21,7 +22,7 @@
 <script setup>
 import { reactive } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
-import { entriesToText, downloadFile } from '../../lib/export.js';
+import { entriesToText, downloadFile, sessionToJson } from '../../lib/export.js';
 
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
@@ -46,6 +47,15 @@ function doExport(format) {
   const text = entriesToText(session, meta, format, cfg);
   const ts = (meta.timestamp || new Date().toISOString()).replace(/[:.]/g, '-').slice(0, 19);
   downloadFile(`session-${ts}.${format}`, text);
+}
+
+function doExportJson() {
+  const session = tabsStore.activeSession;
+  const meta = tabsStore.activeMeta;
+  if (!session || !meta) return;
+  const json = sessionToJson(session);
+  const ts = (meta.timestamp || new Date().toISOString()).replace(/[:.]/g, '-').slice(0, 19);
+  downloadFile(`session-${ts}.json`, json, 'application/json;charset=utf-8');
 }
 </script>
 

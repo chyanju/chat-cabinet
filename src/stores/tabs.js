@@ -81,6 +81,29 @@ export const useTabsStore = defineStore('tabs', {
       this.activeTabIndex = index;
     },
 
+    openImported(sessionData) {
+      const id = `import-${Date.now()}`;
+      const meta = {
+        filePath: id,
+        id: sessionData.session_id || id,
+        timestamp: sessionData.created_at || null,
+        source: sessionData.source?.tool || 'import',
+        title: sessionData.title || 'Imported Session',
+      };
+      const newTab = {
+        sessionPath: id,
+        sessionMeta: meta,
+        sessionData,
+        isPreview: false,
+        scrollPos: 0,
+        loading: false,
+        error: null,
+      };
+      const insertIdx = this.activeTabIndex >= 0 ? this.activeTabIndex + 1 : this.openTabs.length;
+      this.openTabs.splice(insertIdx, 0, newTab);
+      this.activeTabIndex = insertIdx;
+    },
+
     async loadActive() {
       const tab = this.activeTab;
       if (!tab || tab.sessionData) return;

@@ -9,6 +9,8 @@
       <div slot="trigger" class="menubar-item" :class="{ open: openMenu === 'file' }"
            @mouseenter="onHover('file')">File</div>
       <sl-menu @sl-select="onFileSelect">
+        <sl-menu-item value="import">Import JSON...</sl-menu-item>
+        <sl-divider></sl-divider>
         <sl-menu-item value="close-tab">
           Close Tab
           <span slot="suffix" class="menubar-shortcut">Ctrl+W</span>
@@ -39,6 +41,7 @@
 import { ref } from 'vue';
 import { useUiStore } from '../../stores/ui.js';
 import { useTabsStore } from '../../stores/tabs.js';
+import { triggerImport } from '../../lib/import.js';
 
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import '@shoelace-style/shoelace/dist/components/menu/menu.js';
@@ -67,7 +70,9 @@ function onHover(which) {
 
 function onFileSelect(e) {
   const val = e.detail.item.value;
-  if (val === 'close-tab') {
+  if (val === 'import') {
+    triggerImport(tabsStore);
+  } else if (val === 'close-tab') {
     if (tabsStore.activeTabIndex >= 0) tabsStore.close(tabsStore.activeTabIndex);
   }
 }
