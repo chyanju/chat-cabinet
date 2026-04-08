@@ -1,10 +1,24 @@
 {
   "name": "chat-cabinet",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Browse and view local AI coding assistant session logs",
   "main": "server.js",
   "scripts": {
+    "dev": "concurrently \"node server.js\" \"vite\"",
+    "build": "vite build",
+    "preview": "vite preview",
     "start": "node server.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@shoelace-style/shoelace": "^2.20.1",
+    "marked": "^18.0.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.32"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.5",
+    "concurrently": "^9.2.1",
+    "simple-icons": "^16.15.0",
+    "vite": "^8.0.7"
+  }
 }

@@ -1,0 +1,137 @@
+/* ── Chat Cabinet Global Styles ──────────── */
+
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-hover: #1c2333;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --accent-dim: #1f6feb33;
+  --user-bg: #1a2233;
+  --assistant-bg: #121920;
+  --tool-bg: #0f1318;
+  --reasoning-bg: #18161e;
+  --green: #3fb950;
+  --orange: #d29922;
+  --red: #f85149;
+  --reasoning: #bc8cff;
+  --statusbar-bg: #1a1f2b;
+  --red-dim: #f8514912;
+  --red-dimmer: #f8514908;
+  --orange-dim: #d2992233;
+  --green-dim: #3fb95015;
+  --green-dim-bold: #3fb95020;
+  --green-border-dim: #3fb95040;
+  --accent-border-dim: #58a6ff30;
+  --tool-output-bg: #0a0e13;
+  --radius: 8px;
+  --activity-bar-w: 48px;
+  --sidebar-w: 300px;
+  --detail-panel-w: 280px;
+  --menubar-h: 30px;
+  --tab-bar-h: 35px;
+  --statusbar-h: 22px;
+
+  /* Shoelace dark theme overrides */
+  --sl-color-primary-600: var(--accent);
+  --sl-panel-background-color: var(--surface);
+  --sl-panel-border-color: var(--border);
+  --sl-input-background-color: var(--bg);
+  --sl-input-border-color: var(--border);
+  --sl-input-color: var(--text);
+  --sl-color-neutral-0: var(--bg);
+  --sl-color-neutral-50: var(--surface);
+  --sl-color-neutral-100: var(--surface-hover);
+  --sl-color-neutral-700: var(--text-muted);
+  --sl-color-neutral-1000: var(--text);
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Shared conversation styles ─────────── */
+
+.msg-block {
+  margin-bottom: 14px;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.msg-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.msg-ts {
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+.msg-body {
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-x: auto;
+}
+.msg-event {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 5px 0;
+  margin: 3px 0;
+}
+.event-pill {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2px 10px;
+}
+.session-start-pill { background: var(--green-dim-bold); color: var(--green); border-color: var(--green-border-dim); }
+
+/* Markdown content inside messages */
+.msg-body h1, .msg-body h2, .msg-body h3 { margin: 10px 0 5px; font-size: 14px; }
+.msg-body p { margin: 4px 0; }
+.msg-body ul, .msg-body ol { padding-left: 20px; margin: 4px 0; }
+.msg-body pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.msg-body code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+.msg-body :not(pre) > code {
+  background: var(--surface);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

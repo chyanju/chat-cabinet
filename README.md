@@ -11,9 +11,16 @@ A local web-based viewer for browsing AI coding assistant session logs. It aggre
   - Claude Code (`~/.claude/projects/`)
   - Cursor agent transcripts (`~/.cursor/projects/*/agent-transcripts/`)
 - **Search & filter** — full-text search across sessions with source-based filter chips
+- **Tag system** — organize sessions with custom color-coded tags
+- **Tab interface** — VS Code-style preview/pinned tabs with keyboard shortcuts
 - **Detailed conversation view** — renders user messages, assistant replies, tool calls, reasoning traces, and more
-- **Markdown rendering** — assistant messages are rendered with full Markdown support via [marked](https://github.com/markedjs/marked)
-- **Export** — download sessions as `.md` or `.txt` with configurable content (messages, tool calls, reasoning, system prompts, etc.)
+- **Markdown rendering** — assistant messages rendered with full Markdown support
+- **Export** — download sessions as `.md` or `.txt` with configurable content options
+
+## Tech Stack
+
+- **Frontend:** Vue 3 (Composition API) + Pinia + Shoelace (Web Components) + Vite
+- **Backend:** Node.js HTTP server (zero dependencies)
 
 ## Getting Started
 
@@ -25,43 +32,66 @@ A local web-based viewer for browsing AI coding assistant session logs. It aggre
 
 ```bash
 npm install
+npm run build
 npm start
 ```
 
-The server starts at **http://localhost:3456**. Open it in your browser to browse sessions.
+Open **http://localhost:3456** in your browser.
+
+### Development
+
+```bash
+npm run dev
+```
+
+This starts both the API server (:3456) and Vite dev server (:5173) with HMR. Open **http://localhost:5173** during development.
 
 ## Project Structure
 
 ```
 chat-cabinet/
-├── server.js                  # HTTP server & routes (entry point)
+├── server.js                  # HTTP server (API + static files)
 ├── server/
-│   ├── sessions.js            # Session discovery orchestrator & loader
-│   ├── utils.js               # Shared helpers (findJsonlFiles, path decoding)
-│   ├── sources/               # Session discovery (metadata only, fast)
+│   ├── sessions.js            # Session discovery & loader
+│   ├── storage.js             # Persistent storage (~/.cabinet/)
+│   ├── tags.js                # Tag CRUD & assignments
+│   ├── utils.js               # Shared helpers
+│   ├── sources/               # Session discovery adapters
 │   │   ├── codex.js
 │   │   ├── vscode-copilot.js
 │   │   ├── vscode-chat.js
 │   │   ├── claude.js
 │   │   └── cursor.js
-│   └── convert/               # Raw → Chat Cabinet format converters
+│   └── convert/               # Raw → unified format converters
 │       ├── codex.js
 │       ├── vscode-copilot.js
 │       ├── vscode-chat.js
 │       ├── claude.js
 │       └── cursor.js
-├── public/
-│   ├── index.html
-│   ├── app.js                 # Frontend entry (state, routing, events)
-│   ├── style.css
-│   └── js/
-│       ├── api.js             # Fetch helpers
-│       ├── sources.js         # Source labels & colors
-│       ├── sidebar.js         # Source chips & session list
-│       ├── utils.js           # Shared utilities
-│       ├── export.js          # Export to .md / .txt
-│       └── renderers/
-│           └── unified.js     # Single renderer for Chat Cabinet format
+├── src/
+│   ├── main.js                # Vue app entry
+│   ├── App.vue                # Root component (CSS Grid layout)
+│   ├── assets/style.css       # Global CSS variables & shared styles
+│   ├── stores/                # Pinia state management
+│   │   ├── sessions.js
+│   │   ├── tabs.js
+│   │   ├── tags.js
+│   │   └── ui.js
+│   ├── lib/                   # Pure logic (no Vue dependency)
+│   │   ├── api.js
+│   │   ├── tag-api.js
+│   │   ├── sources.js
+│   │   ├── format.js
+│   │   ├── markdown.js
+│   │   └── export.js
+│   └── components/
+│       ├── layout/            # MenuBar, ActivityBar, StatusBar
+│       ├── sidebar/           # SidebarPanel, SessionItem, SourceChips, TagView
+│       ├── editor/            # TabItem, EditorArea
+│       ├── conversation/      # ConversationView, MessageBlock, ToolCallBlock, etc.
+│       └── detail/            # DetailPanel, DetailMetadata, DetailTags, ExportSection
+├── index.html                 # Vite entry point
+├── vite.config.js
 ├── docs/
 │   └── format.md              # Chat Cabinet format specification
 ├── package.json

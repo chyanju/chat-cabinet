@@ -119,11 +119,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ── Static files from public/ ────────────────────────
-  let filePath = path.join(__dirname, 'public', url.pathname === '/' ? 'index.html' : url.pathname);
+  // ── Static files from dist/ (Vite build) ──────────────
+  let filePath = path.join(__dirname, 'dist', url.pathname === '/' ? 'index.html' : url.pathname);
   filePath = path.resolve(filePath);
 
-  if (!filePath.startsWith(path.join(__dirname, 'public'))) {
+  if (!filePath.startsWith(path.join(__dirname, 'dist'))) {
     res.writeHead(403);
     res.end('Forbidden');
     return;

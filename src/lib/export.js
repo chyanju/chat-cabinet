@@ -1,26 +1,16 @@
-import { formatTime, formatTimeBrief } from './utils.js';
-
-export function getExportConfig() {
-  return {
-    userMsg:      document.getElementById('expUserMsg').checked,
-    assistantMsg: document.getElementById('expAssistantMsg').checked,
-    toolCalls:    document.getElementById('expToolCalls').checked,
-    toolOutput:   document.getElementById('expToolOutput').checked,
-    reasoning:    document.getElementById('expReasoning').checked,
-    systemPrompt: document.getElementById('expSystemPrompt').checked,
-    events:       document.getElementById('expEvents').checked,
-    timestamps:   document.getElementById('expTimestamps').checked,
-  };
-}
+import { formatTime, formatTimeBrief } from './format.js';
 
 /**
- * Export a Chat Cabinet unified session to text.
+ * Convert a Chat Cabinet session to text.
+ * @param {object} session - Unified session data
+ * @param {object} meta - Session metadata
+ * @param {string} format - 'md' or 'txt'
+ * @param {object} cfg - Export config (userMsg, assistantMsg, toolCalls, toolOutput, reasoning, systemPrompt, events, timestamps)
  */
-export function entriesToText(session, meta, format) {
-  const cfg = getExportConfig();
+export function entriesToText(session, meta, format, cfg) {
   const lines = [];
   const isMd = format === 'md';
-  const divider = isMd ? '\n---\n' : '\n' + String.fromCharCode(9472).repeat(60) + '\n';
+  const divider = isMd ? '\n---\n' : '\n' + '\u2500'.repeat(60) + '\n';
 
   const model = session.model?.name || session.model?.id || meta.model_provider || 'unknown';
   const cwd = session.workspace?.cwd || meta.cwd || '?';
@@ -91,8 +81,8 @@ export function entriesToText(session, meta, format) {
       } else if (event.type === 'status') {
         if (!cfg.events) continue;
         const label = event.label || event.kind || '';
-        if (isMd) lines.push('> *' + label + (tsStr ? ' · ' + tsStr : '') + '*\n');
-        else lines.push('--- ' + label + (tsStr ? ' · ' + tsStr : '') + ' ---\n');
+        if (isMd) lines.push('> *' + label + (tsStr ? ' \u00b7 ' + tsStr : '') + '*\n');
+        else lines.push('--- ' + label + (tsStr ? ' \u00b7 ' + tsStr : '') + ' ---\n');
       }
     }
   }
@@ -111,4 +101,3 @@ export function downloadFile(filename, content) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
