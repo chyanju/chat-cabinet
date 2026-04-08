@@ -12,9 +12,9 @@
       <sl-checkbox :checked="cfg.timestamps" @sl-change="cfg.timestamps = $event.target.checked">Timestamps</sl-checkbox>
     </div>
     <div class="dp-export-actions">
-      <sl-button size="small" variant="primary" outline @click="doExport('md')">Export .md</sl-button>
-      <sl-button size="small" variant="primary" outline @click="doExport('txt')">Export .txt</sl-button>
-      <sl-button size="small" variant="primary" outline @click="doExportJson()">Export .json</sl-button>
+      <sl-button size="small" variant="primary" outline @click="doExport('md')">.md</sl-button>
+      <sl-button size="small" variant="primary" outline @click="doExport('txt')">.txt</sl-button>
+      <sl-button size="small" variant="primary" outline @click="doExportJson()">.json</sl-button>
     </div>
   </div>
 </template>
@@ -89,10 +89,16 @@ sl-checkbox::part(control) {
 
 .dp-export-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 10px;
+}
+sl-button {
+  flex: 1 1 0;
+  min-width: 0;
 }
 sl-button::part(base) {
   font-size: 11px;
+  width: 100%;
 }
 </style>

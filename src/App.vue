@@ -29,6 +29,11 @@ const tabsStore = useTabsStore();
 const tagsStore = useTagsStore();
 
 function onKeydown(e) {
+  // Ctrl+N — new tab
+  if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault();
+    tabsStore.openWelcome();
+  }
   // Ctrl+W — close tab
   if (e.ctrlKey && e.key === 'w') {
     e.preventDefault();
@@ -48,6 +53,7 @@ function onKeydown(e) {
 
 onMounted(async () => {
   document.addEventListener('keydown', onKeydown);
+  tabsStore.openWelcome();
   await Promise.all([sessionsStore.refresh(), tagsStore.refresh()]);
 });
 

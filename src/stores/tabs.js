@@ -95,6 +95,43 @@ export const useTabsStore = defineStore('tabs', {
         sessionMeta: meta,
         sessionData,
         isPreview: false,
+        isWelcome: false,
+        scrollPos: 0,
+        loading: false,
+        error: null,
+      };
+      const insertIdx = this.activeTabIndex >= 0 ? this.activeTabIndex + 1 : this.openTabs.length;
+      this.openTabs.splice(insertIdx, 0, newTab);
+      this.activeTabIndex = insertIdx;
+    },
+
+    /** Replace the current active welcome tab in-place with imported session data */
+    replaceActiveWithImported(sessionData) {
+      const tab = this.activeTab;
+      if (!tab) return;
+      const id = `import-${Date.now()}`;
+      tab.sessionPath = id;
+      tab.sessionMeta = {
+        filePath: id,
+        id: sessionData.session_id || id,
+        timestamp: sessionData.created_at || null,
+        source: sessionData.source?.tool || 'import',
+        title: sessionData.title || 'Imported Session',
+      };
+      tab.sessionData = sessionData;
+      tab.isWelcome = false;
+      tab.loading = false;
+      tab.error = null;
+    },
+
+    openWelcome() {
+      const id = `welcome-${Date.now()}`;
+      const newTab = {
+        sessionPath: id,
+        sessionMeta: { filePath: id, id, title: 'New Tab' },
+        sessionData: null,
+        isPreview: false,
+        isWelcome: true,
         scrollPos: 0,
         loading: false,
         error: null,

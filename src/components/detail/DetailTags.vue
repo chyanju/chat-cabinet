@@ -1,5 +1,5 @@
 <template>
-  <div v-if="tabsStore.activeTab" class="dp-section dp-tags">
+  <div v-if="tabsStore.activeTab && !tabsStore.activeTab.isWelcome" class="dp-section dp-tags">
     <div class="dp-section-title">Tags</div>
 
     <!-- Assigned tags -->

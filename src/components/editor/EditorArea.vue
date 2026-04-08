@@ -18,8 +18,11 @@
       <div v-if="!tabsStore.activeTab" class="placeholder">
         <div class="placeholder-icon">&#128193;</div>
         <div>Select a session to view</div>
-        <button class="placeholder-import" @click="onImport">or import a .json file</button>
+        <button class="placeholder-import" @click="tabsStore.openWelcome()">or open a new tab to import</button>
       </div>
+
+      <!-- Welcome tab (drop zone) -->
+      <WelcomeTab v-else-if="tabsStore.activeTab.isWelcome" />
 
       <!-- Loading -->
       <div v-else-if="tabsStore.activeTab.loading" class="loading">
@@ -43,18 +46,14 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
-import { triggerImport } from '../../lib/import.js';
 import TabItem from './TabItem.vue';
+import WelcomeTab from './WelcomeTab.vue';
 import ConversationView from '../conversation/ConversationView.vue';
 
 import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 
 const tabsStore = useTabsStore();
 const editorContentEl = ref(null);
-
-function onImport() {
-  triggerImport(tabsStore);
-}
 
 // Save/restore scroll position on tab switch
 watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {

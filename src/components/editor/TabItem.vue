@@ -6,7 +6,8 @@
     @dblclick="emit('pin')"
     @auxclick.middle.prevent="emit('close')"
   >
-    <span class="tab-icon" :style="{ color: iconColor }" v-html="iconSvg"></span>
+    <span v-if="tab.isWelcome" class="tab-icon tab-icon-welcome">+</span>
+    <span v-else class="tab-icon" :style="{ color: iconColor }" v-html="iconSvg"></span>
     <span class="tab-label" :title="tab.sessionMeta?.cwd || tab.sessionMeta?.id || ''">{{ label }}</span>
     <button class="tab-close" title="Close" @click.stop="emit('close')">&times;</button>
   </div>
@@ -71,6 +72,12 @@ const label = computed(() => {
   width: 14px;
   height: 14px;
   fill: currentColor;
+}
+.tab-icon-welcome {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1;
 }
 .tab-label {
   overflow: hidden;
