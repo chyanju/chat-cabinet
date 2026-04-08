@@ -14,7 +14,9 @@
     <div class="dp-export-actions">
       <sl-button size="small" variant="primary" outline @click="doExport('md')">.md</sl-button>
       <sl-button size="small" variant="primary" outline @click="doExport('txt')">.txt</sl-button>
-      <sl-button size="small" variant="primary" outline @click="doExportJson()">.json</sl-button>
+    </div>
+    <div class="dp-export-json">
+      <sl-button size="small" variant="default" outline @click="doExportJson()">Export Cabinet JSON</sl-button>
     </div>
   </div>
 </template>
@@ -93,12 +95,17 @@ sl-checkbox::part(control) {
   gap: 6px;
   margin-top: 10px;
 }
-sl-button {
+.dp-export-actions sl-button {
   flex: 1 1 0;
   min-width: 0;
 }
 sl-button::part(base) {
   font-size: 11px;
   width: 100%;
+}
+.dp-export-json {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 </style>

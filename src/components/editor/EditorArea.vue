@@ -11,6 +11,7 @@
         @close="tabsStore.close(i)"
         @pin="tabsStore.pin(i)"
       />
+      <button class="tab-new" title="New Tab" @click="tabsStore.openWelcome()">+</button>
     </div>
 
     <div class="editor-content" ref="editorContentEl">
@@ -89,6 +90,23 @@ watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {
   overflow-y: hidden;
 }
 .tab-bar::-webkit-scrollbar { height: 0; }
+
+.tab-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-width: 28px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  transition: color 0.1s;
+}
+.tab-new:hover {
+  color: var(--text);
+}
 
 .editor-content {
   flex: 1;
