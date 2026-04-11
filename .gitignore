@@ -4,3 +4,11 @@ dist/
 .DS_Store
 .env
 .env.local
+
+# Rust / Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Generated placeholder icon (re-create via `node scripts/gen-icon.js` if needed)
+app-icon.png
+
