@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchTags as apiFetchTags, createTag as apiCreateTag, deleteTag as apiDeleteTag, assignTag as apiAssignTag, unassignTag as apiUnassignTag } from '../lib/tag-api.js';
+import { fetchTags as apiFetchTags, createTag as apiCreateTag, deleteTag as apiDeleteTag, assignTag as apiAssignTag, unassignTag as apiUnassignTag, updateTag as apiUpdateTag } from '../lib/tag-api.js';
 
 export const useTagsStore = defineStore('tags', {
   state: () => ({
@@ -33,6 +33,10 @@ export const useTagsStore = defineStore('tags', {
       const tag = await apiCreateTag(name, color);
       await this.refresh();
       return tag;
+    },
+    async update(id, updates) {
+      await apiUpdateTag(id, updates);
+      await this.refresh();
     },
     async remove(id) {
       await apiDeleteTag(id);

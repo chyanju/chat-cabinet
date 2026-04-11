@@ -3,24 +3,29 @@
     <sl-input
       ref="inputEl"
       size="small"
-      placeholder="Type tag name..."
+      placeholder="Search or create tag..."
       :value="query"
       @sl-input="onInput"
       @keydown.enter="onEnter"
       @keydown.escape="emit('close')"
     />
-    <div v-if="query && suggestions.length > 0" class="dp-tag-suggestions">
+    <div v-if="suggestions.length > 0" class="dp-tag-suggestions">
       <div
-        v-for="item in suggestions"
+        v-for="(item, i) in suggestions"
         :key="item.id || item.name"
         class="dp-tag-suggestion"
-        :class="{ new: item.isNew }"
+        :class="{ new: item.isNew, highlighted: i === highlightIndex }"
         @click="onSuggestionClick(item)"
+        @mouseenter="highlightIndex = i"
       >
         <span v-if="!item.isNew" class="dp-tag-dot" :style="{ background: item.color }"></span>
+        <span v-if="item.isNew" class="dp-tag-create-icon">+</span>
         <template v-if="item.isNew">Create "{{ item.name }}"</template>
         <template v-else>{{ item.name }}</template>
       </div>
+    </div>
+    <div v-else-if="unassignedTags.length === 0 && !query.trim()" class="dp-tag-empty-hint">
+      Type to create your first tag
     </div>
   </div>
 </template>
@@ -39,10 +44,17 @@ const emit = defineEmits(['assign', 'create', 'close']);
 const query = ref('');
 const wrapEl = ref(null);
 const inputEl = ref(null);
+const highlightIndex = ref(-1);
+
+const unassignedTags = computed(() =>
+  props.allTags.filter(t => !props.assignedIds.has(t.id))
+);
 
 onMounted(() => {
-  nextTick(() => inputEl.value?.focus());
-  document.addEventListener('click', onOutsideClick);
+  nextTick(() => {
+    inputEl.value?.focus();
+  });
+  setTimeout(() => document.addEventListener('click', onOutsideClick), 0);
 });
 
 onUnmounted(() => {
@@ -57,15 +69,18 @@ function onOutsideClick(e) {
 
 function onInput(e) {
   query.value = e.target.value;
+  highlightIndex.value = -1;
 }
 
 const suggestions = computed(() => {
   const q = query.value.toLowerCase().trim();
-  if (!q) return [];
 
-  const filtered = props.allTags.filter(
-    t => !props.assignedIds.has(t.id) && t.name.toLowerCase().includes(q)
-  ).slice(0, 5);
+  // No query: show all unassigned tags
+  if (!q) return unassignedTags.value.slice(0, 8);
+
+  const filtered = unassignedTags.value
+    .filter(t => t.name.toLowerCase().includes(q))
+    .slice(0, 8);
 
   const result = [...filtered];
   const hasExact = props.allTags.some(t => t.name.toLowerCase() === q);
@@ -81,6 +96,11 @@ function onSuggestionClick(item) {
 }
 
 function onEnter() {
+  // If an item is highlighted, select it
+  if (highlightIndex.value >= 0 && highlightIndex.value < suggestions.value.length) {
+    onSuggestionClick(suggestions.value[highlightIndex.value]);
+    return;
+  }
   const q = query.value.trim();
   if (!q) return;
   const exact = props.allTags.find(
@@ -129,7 +149,8 @@ sl-input::part(input) {
   cursor: pointer;
   transition: background 0.1s;
 }
-.dp-tag-suggestion:hover {
+.dp-tag-suggestion:hover,
+.dp-tag-suggestion.highlighted {
   background: var(--accent-dim);
   color: var(--accent);
 }
@@ -137,10 +158,20 @@ sl-input::part(input) {
   color: var(--green);
   font-style: italic;
 }
+.dp-tag-create-icon {
+  font-weight: 700;
+  font-style: normal;
+}
 .dp-tag-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+.dp-tag-empty-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 6px 2px;
+  font-style: italic;
 }
 </style>
