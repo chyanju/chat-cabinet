@@ -9,6 +9,6 @@ dist/
 src-tauri/target/
 src-tauri/gen/schemas/
 
-# Generated placeholder icon (re-create via `node scripts/gen-icon.js` if needed)
+# Temporary icon generation output
 app-icon.png
 

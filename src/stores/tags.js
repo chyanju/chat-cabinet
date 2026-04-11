@@ -5,6 +5,7 @@ export const useTagsStore = defineStore('tags', {
   state: () => ({
     tags: [],
     assignments: [],
+    error: null,
   }),
   getters: {
     getTagsForSession: (state) => (sessionPath) => {
@@ -16,9 +17,17 @@ export const useTagsStore = defineStore('tags', {
   },
   actions: {
     async refresh() {
-      const data = await apiFetchTags();
-      this.tags = data.tags;
-      this.assignments = data.assignments;
+      this.error = null;
+      try {
+        const data = await apiFetchTags();
+        this.tags = data.tags || [];
+        this.assignments = data.assignments || [];
+      } catch (e) {
+        this.tags = [];
+        this.assignments = [];
+        this.error = e.message || String(e);
+        console.error('[tags.refresh]', e);
+      }
     },
     async create(name, color) {
       const tag = await apiCreateTag(name, color);

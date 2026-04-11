@@ -25,6 +25,17 @@
       <div class="filter-count" v-if="showCount">
         {{ sessionsStore.filteredSessions.length }} of {{ sessionsStore.sessions.length }} sessions
       </div>
+      <div v-if="sessionsStore.error" class="sidebar-error">
+        <strong>Failed to load sessions</strong>
+        <div class="sidebar-error-msg">{{ sessionsStore.error }}</div>
+        <button class="sidebar-error-retry" @click="onRefresh">Retry</button>
+      </div>
+      <div
+        v-else-if="!sessionsStore.loading && sessionsStore.sessions.length === 0"
+        class="sidebar-empty"
+      >
+        No sessions found.
+      </div>
       <ul class="session-list">
         <SessionItem
           v-for="s in sessionsStore.filteredSessions"
@@ -119,6 +130,38 @@ async function onRefresh() {
 
 .filter-count {
   padding: 4px 14px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.sidebar-error {
+  margin: 6px 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--error, #f38ba8);
+  border-radius: 6px;
+  background: rgba(243, 139, 168, 0.08);
+  font-size: 11px;
+  color: var(--text);
+}
+.sidebar-error-msg {
+  margin-top: 4px;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+.sidebar-error-retry {
+  margin-top: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.sidebar-error-retry:hover {
+  background: var(--surface-hover);
+}
+.sidebar-empty {
+  padding: 8px 14px;
   font-size: 11px;
   color: var(--text-muted);
 }

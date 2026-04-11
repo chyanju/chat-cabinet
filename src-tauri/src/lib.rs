@@ -44,6 +44,8 @@ fn spawn_node_server() -> Result<(Child, u16), String> {
 
     let mut child = Command::new("node")
         .arg(&server_js)
+        .arg("--port")
+        .arg("0")
         .current_dir(&server_dir)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -71,9 +73,11 @@ fn spawn_node_server() -> Result<(Child, u16), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let headless = std::env::args().any(|a| a == "--headless");
+    let is_dev = cfg!(debug_assertions);
 
     let (mut child, port) = spawn_node_server().expect("Failed to start backend server");
     let server_url = format!("http://localhost:{}", port);
+    let dev_url = format!("http://localhost:5173/?apiBase={}", urlencoding::encode(&server_url));
 
     if headless {
         // CLI fallback: no GUI, just keep the Node server running until interrupted.
@@ -89,8 +93,10 @@ pub fn run() {
         .setup(move |app| {
             let window = app.get_webview_window("main").expect("no main window");
             window
-                .navigate(server_url.parse().unwrap())
-                .expect("failed to navigate to server URL");
+                .navigate(
+                    if is_dev { dev_url.parse().unwrap() } else { server_url.parse().unwrap() }
+                )
+                .expect("failed to navigate to app URL");
             Ok(())
         })
         .run(tauri::generate_context!())
