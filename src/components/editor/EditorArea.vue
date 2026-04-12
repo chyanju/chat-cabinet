@@ -23,7 +23,7 @@
         <div class="placeholder-icon">&#128193;</div>
         <div>Select a session from the sidebar</div>
         <div class="placeholder-hint">or drop a JSON file anywhere to view</div>
-        <button class="placeholder-browse" @click="browseForFile">Open Session from File</button>
+        <button class="placeholder-browse" @click="browseForFile(tabsStore.openViewed.bind(tabsStore))">Open Session from File</button>
       </div>
 
       <!-- Loading -->
@@ -48,7 +48,7 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
-import { importSessionFromFile } from '../../lib/import.js';
+import { browseForFile } from '../../lib/import.js';
 import TabItem from './TabItem.vue';
 import ConversationView from '../conversation/ConversationView.vue';
 
@@ -57,23 +57,6 @@ import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 const tabsStore = useTabsStore();
 const editorContentEl = ref(null);
 const tabBarEl = ref(null);
-
-function browseForFile() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return;
-    const result = await importSessionFromFile(file);
-    if (result.error) {
-      console.error('[open-file]', result.error);
-      return;
-    }
-    tabsStore.openViewed(result.data);
-  };
-  input.click();
-}
 
 // ── Tab drag-to-reorder (pointer events, VS Code-style) ──────
 const dragFromIndex = ref(-1);

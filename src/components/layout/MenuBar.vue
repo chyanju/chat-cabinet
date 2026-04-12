@@ -125,7 +125,7 @@
             <img src="/logo.png" alt="" class="about-logo">
             <span class="about-title">Chat Cabinet</span>
           </div>
-          <div class="about-version">v0.3.1</div>
+          <div class="about-version">v0.3.2</div>
           <p class="about-desc">A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, and Cursor.</p>
           <div class="about-footer">
             <button class="about-close-btn" @click="showAbout = false">Close</button>
@@ -142,7 +142,7 @@ import { useUiStore } from '../../stores/ui.js';
 import { useTabsStore } from '../../stores/tabs.js';
 import { REDACTION_RULES } from '../../lib/redact.js';
 import { entriesToText, downloadFile, sessionToJson } from '../../lib/export.js';
-import { importSessionFromFile } from '../../lib/import.js';
+import { browseForFile } from '../../lib/import.js';
 
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import '@shoelace-style/shoelace/dist/components/menu/menu.js';
@@ -220,27 +220,10 @@ function onHover(which) {
   }
 }
 
-function browseForFile() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return;
-    const result = await importSessionFromFile(file);
-    if (result.error) {
-      console.error('[open-file]', result.error);
-      return;
-    }
-    tabsStore.openViewed(result.data);
-  };
-  input.click();
-}
-
 function onFileSelect(e) {
   const val = e.detail.item.value;
   if (val === 'open-file') {
-    browseForFile();
+    browseForFile(tabsStore.openViewed.bind(tabsStore));
   } else if (val === 'close-tab') {
     if (tabsStore.activeTabIndex >= 0) tabsStore.close(tabsStore.activeTabIndex);
   }

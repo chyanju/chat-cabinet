@@ -166,22 +166,21 @@ function listAllSessions() {
   }));
 }
 
+/** Converter map: format → conversion function. */
+const converters = {
+  'codex':               convertCodexSession,
+  'vscode-copilot':      convertVSCodeDebugLog,
+  'vscode-chat-session': convertVSCodeChatSession,
+  'claude-code':         convertClaudeCodeSession,
+  'cursor':              convertCursorSession,
+};
+
 /**
- * Load a session by DB id.
- * Entity sessions return stored data; shortcuts read & convert from source_path.
+ * Read a source file and convert it to unified format.
+ * Validates the path against allowed prefixes.
  */
-function loadSession(sessionId) {
-  const db = getDb();
-  const row = db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId);
-  if (!row) throw new Error('Session not found');
-
-  // Entity: return stored unified JSON
-  if (row.data) {
-    return JSON.parse(row.data);
-  }
-
-  // Shortcut: read from source_path
-  if (!row.source_path) throw new Error('Session has no data and no source path');
+function readAndConvert(row) {
+  if (!row.source_path) throw new Error('Session has no source path');
 
   const resolved = path.resolve(row.source_path);
   const allowed = getAllowedPrefixes();
@@ -212,18 +211,28 @@ function loadSession(sessionId) {
     cwd: row.cwd,
   };
 
-  const converters = {
-    'codex':               convertCodexSession,
-    'vscode-copilot':      convertVSCodeDebugLog,
-    'vscode-chat-session': convertVSCodeChatSession,
-    'claude-code':         convertClaudeCodeSession,
-    'cursor':              convertCursorSession,
-  };
   const convert = converters[format];
-  if (convert) {
-    return convert(entries, meta);
-  }
+  if (convert) return convert(entries, meta);
   return { version: 1, session_id: null, source: { format }, turns: [{ turn_id: '0', events: [] }] };
+}
+
+/**
+ * Load a session by DB id.
+ * Entity sessions return stored data; shortcuts read & convert from source_path.
+ */
+function loadSession(sessionId) {
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId);
+  if (!row) throw new Error('Session not found');
+
+  // Entity: return stored unified JSON
+  if (row.data) {
+    return JSON.parse(row.data);
+  }
+
+  // Shortcut: read from source_path
+  if (!row.source_path) throw new Error('Session has no data and no source path');
+  return readAndConvert(row);
 }
 
 /** Best-effort format detection from raw entries. */
@@ -237,8 +246,6 @@ function detectFormat(entries) {
   if (first.role) return 'cursor';
   return 'unknown';
 }
-
-module.exports = { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession };
 
 // ── Save / Unsave / Pull ─────────────────────────────────
 
@@ -291,18 +298,7 @@ function pullSession(sessionId) {
   if (!row.data) throw new Error('Session is not saved — save it first');
   if (!row.source_path) throw new Error('No source path to pull from');
 
-  // Temporarily clear data so loadSession reads from source_path
-  const origData = row.data;
-  db.prepare('UPDATE sessions SET data = NULL WHERE id = ?').run(sessionId);
-
-  let unified;
-  try {
-    unified = loadSession(sessionId);
-  } catch (e) {
-    // Restore on failure
-    db.prepare('UPDATE sessions SET data = ? WHERE id = ?').run(origData, sessionId);
-    throw e;
-  }
+  const unified = readAndConvert(row);
 
   const now = new Date().toISOString();
   db.prepare('UPDATE sessions SET data = ?, updated_at = ? WHERE id = ?').run(
@@ -310,3 +306,5 @@ function pullSession(sessionId) {
   );
   return { ok: true, id: sessionId };
 }
+
+module.exports = { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession };

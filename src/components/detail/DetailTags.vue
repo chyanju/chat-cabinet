@@ -1,5 +1,5 @@
 <template>
-  <div v-if="tabsStore.activeTab" class="dp-section dp-tags">
+  <div v-if="tabsStore.activeTab && !isViewTab" class="dp-section dp-tags">
     <div class="dp-section-header">
       <span class="dp-section-title">Tags</span>
       <sl-icon-button v-if="!showInput" name="plus-lg" label="Add tag" class="dp-tag-add-btn" @click="showInput = true" />
@@ -47,6 +47,7 @@ const tagsStore = useTagsStore();
 const showInput = ref(false);
 
 const sessionPath = computed(() => tabsStore.activeTab?.sessionPath || '');
+const isViewTab = computed(() => sessionPath.value.startsWith('view-'));
 const sessionTags = computed(() => tagsStore.getTagsForSession(sessionPath.value));
 const assignedIds = computed(() => new Set(sessionTags.value.map(t => t.id)));
 

@@ -80,7 +80,9 @@ const sourceLabel = computed(() => {
 
 const storageLabel = computed(() => {
   const meta = tabsStore.activeMeta;
-  if (!meta || meta.id?.startsWith('welcome-') || meta.id?.startsWith('import-')) return '';
+  if (!meta) return '';
+  if (meta.id?.startsWith('welcome-') || meta.id?.startsWith('import-') || meta.id?.startsWith('view-')) return '';
+  if (meta.filePath?.startsWith('view-')) return '';
   return meta.has_data ? 'Saved' : 'Linked';
 });
 

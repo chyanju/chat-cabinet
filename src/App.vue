@@ -16,7 +16,7 @@ import { useUiStore } from './stores/ui.js';
 import { useSessionsStore } from './stores/sessions.js';
 import { useTabsStore } from './stores/tabs.js';
 import { useTagsStore } from './stores/tags.js';
-import { importSessionFromFile } from './lib/import.js';
+import { importSessionFromFile, browseForFile } from './lib/import.js';
 import MenuBar from './components/layout/MenuBar.vue';
 import ActivityBar from './components/layout/ActivityBar.vue';
 import StatusBar from './components/layout/StatusBar.vue';
@@ -33,7 +33,7 @@ function onKeydown(e) {
   // Ctrl+O — open file
   if (e.ctrlKey && e.key === 'o') {
     e.preventDefault();
-    browseForFile();
+    browseForFile(tabsStore.openViewed.bind(tabsStore));
   }
   // Ctrl+W — close tab
   if (e.ctrlKey && e.key === 'w') {
@@ -50,23 +50,6 @@ function onKeydown(e) {
       tabsStore.activate(next);
     }
   }
-}
-
-function browseForFile() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return;
-    const result = await importSessionFromFile(file);
-    if (result.error) {
-      console.error('[open-file]', result.error);
-      return;
-    }
-    tabsStore.openViewed(result.data);
-  };
-  input.click();
 }
 
 function onDragOver(e) {

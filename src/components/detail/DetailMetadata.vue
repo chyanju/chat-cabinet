@@ -30,7 +30,7 @@
         <span class="dp-field-label">Turns</span>
         <span class="dp-field-value">{{ session.turns?.length || 0 }}</span>
       </div>
-      <div class="dp-field dp-storage-field">
+      <div v-if="!isViewTab" class="dp-field dp-storage-field">
         <span class="dp-field-label">
           Storage
           <sl-tooltip class="dp-storage-tip">
@@ -111,6 +111,7 @@ const cwd = computed(() => {
   return raw.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~');
 });
 
+const isViewTab = computed(() => tabsStore.activeTab?.sessionPath?.startsWith('view-'));
 const isEntity = computed(() => !!meta.value?.has_data);
 const hasSourcePath = computed(() => !!meta.value?.source_path);
 const busy = ref(false);
@@ -128,8 +129,7 @@ async function refreshActiveSession() {
     const updated = sessionsStore.sessions.find(s => s.id === tab.sessionPath);
     if (updated) tab.sessionMeta = updated;
     // Reload session data
-    const data = await fetchSession(tab.sessionPath);
-    if (!data.error) tab.sessionData = data;
+    tab.sessionData = await fetchSession(tab.sessionPath);
   }
 }
 

@@ -56,14 +56,24 @@ fn spawn_node_server(is_dev: bool) -> Result<(Child, u16), String> {
         .map_err(|e| format!("Failed to spawn node: {e}"))?;
 
     let stdout = child.stdout.take().ok_or("No stdout")?;
-    let reader = BufReader::new(stdout);
+    let mut reader = BufReader::new(stdout);
+    let mut line = String::new();
 
-    for line in reader.lines() {
-        let line = line.map_err(|e| format!("Read error: {e}"))?;
+    loop {
+        line.clear();
+        let n = reader.read_line(&mut line).map_err(|e| format!("Read error: {e}"))?;
+        if n == 0 {
+            break; // EOF
+        }
         // server.js prints: "Chat Cabinet running at http://localhost:PORT"
-        if let Some(url_part) = line.strip_prefix("Chat Cabinet running at ") {
+        if let Some(url_part) = line.trim().strip_prefix("Chat Cabinet running at ") {
             if let Some(port_str) = url_part.rsplit(':').next() {
                 if let Ok(port) = port_str.parse::<u16>() {
+                    // Drain remaining stdout in a background thread to prevent Node from blocking
+                    std::thread::spawn(move || {
+                        let mut sink = std::io::sink();
+                        let _ = std::io::copy(&mut reader, &mut sink);
+                    });
                     return Ok((child, port));
                 }
             }
@@ -78,7 +88,13 @@ pub fn run() {
     let headless = std::env::args().any(|a| a == "--headless");
     let is_dev = cfg!(debug_assertions);
 
-    let (mut child, port) = spawn_node_server(is_dev).expect("Failed to start backend server");
+    let (mut child, port) = match spawn_node_server(is_dev) {
+        Ok(result) => result,
+        Err(e) => {
+            eprintln!("Failed to start backend server: {e}");
+            std::process::exit(1);
+        }
+    };
     let server_url = format!("http://localhost:{}", port);
     let dev_url = format!("http://localhost:5173/?_port={}", port);
 
@@ -94,12 +110,13 @@ pub fn run() {
         .manage(ServerProcess(Mutex::new(Some(child))))
         .plugin(tauri_plugin_shell::init())
         .setup(move |app| {
-            let window = app.get_webview_window("main").expect("no main window");
-            window
-                .navigate(
-                    if is_dev { dev_url.parse().unwrap() } else { server_url.parse().unwrap() }
-                )
-                .expect("failed to navigate to app URL");
+            let window = app.get_webview_window("main")
+                .ok_or_else(|| "no main window".to_string())?;
+            let url_str = if is_dev { &dev_url } else { &server_url };
+            let parsed_url = url_str.parse()
+                .map_err(|e| format!("invalid URL '{url_str}': {e}"))?;
+            window.navigate(parsed_url)
+                .map_err(|e| format!("failed to navigate: {e}"))?;
             Ok(())
         })
         .run(tauri::generate_context!())

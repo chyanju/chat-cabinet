@@ -1,11 +1,19 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { initDb, closeDb, isDev, getCabinetDir } = require('./server/db');
+const { spawn } = require('child_process');
+const { initDb, getDb, closeDb, isDev, getCabinetDir } = require('./server/db');
 const { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession } = require('./server/sessions');
 const { listTags, createTag, deleteTag, assignTag, unassignTag, updateTag } = require('./server/tags');
 
 const DEFAULT_PORT = 3456;
+
+/** Open a directory in the platform file manager. */
+function openDir(dir) {
+  if (process.platform === 'darwin') return spawn('open', [dir]);
+  if (process.platform === 'win32') return spawn('explorer', [dir]);
+  return spawn('xdg-open', [dir]);
+}
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -137,17 +145,14 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/session/reveal' && method === 'POST') {
     try {
       const body = await parseBody(req);
-      const { getDb } = require('./server/db');
       const row = getDb().prepare('SELECT source_path FROM sessions WHERE id = ?').get(body.id);
       if (!row || !row.source_path) {
         jsonResponse(res, 400, { error: 'No source path for this session' });
         return;
       }
       const dir = path.dirname(row.source_path);
-      const { spawn } = require('child_process');
-      if (process.platform === 'darwin') spawn('open', [dir]);
-      else if (process.platform === 'win32') spawn('explorer', [dir]);
-      else spawn('xdg-open', [dir]);
+      const p = openDir(dir);
+      if (p) p.on('error', () => {});
       jsonResponse(res, 200, { ok: true, dir });
     } catch (e) {
       jsonResponse(res, 400, { error: e.message });
@@ -167,10 +172,8 @@ const server = http.createServer(async (req, res) => {
         jsonResponse(res, 400, { error: 'Invalid directory' });
         return;
       }
-      const { spawn } = require('child_process');
-      if (process.platform === 'darwin') spawn('open', [resolved]);
-      else if (process.platform === 'win32') spawn('explorer', [resolved]);
-      else spawn('xdg-open', [resolved]);
+      const p = openDir(resolved);
+      if (p) p.on('error', () => {});
       jsonResponse(res, 200, { ok: true });
     } catch (e) {
       jsonResponse(res, 400, { error: e.message });
@@ -240,6 +243,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Unknown API routes ─────────────────────────────────
+  if (url.pathname.startsWith('/api/')) {
+    jsonResponse(res, 404, { error: 'Unknown API endpoint' });
+    return;
+  }
+
   // ── Static files from dist/ (Vite build) ──────────────
   let filePath = path.join(__dirname, 'dist', url.pathname === '/' ? 'index.html' : url.pathname);
   filePath = path.resolve(filePath);
@@ -257,6 +266,12 @@ const server = http.createServer(async (req, res) => {
     '.js': 'application/javascript',
     '.json': 'application/json',
     '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.ico': 'image/x-icon',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
   };
 
   fs.readFile(filePath, (err, data) => {

@@ -4,6 +4,8 @@
 const crypto = require('crypto');
 const { getDb } = require('./db');
 
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+
 function listTags() {
   const db = getDb();
   const tags = db.prepare('SELECT * FROM tags ORDER BY created_at').all();
@@ -13,10 +15,14 @@ function listTags() {
 
 function createTag(name, color) {
   const db = getDb();
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error('Tag name is required');
+  const finalColor = color || '#58a6ff';
+  if (!HEX_COLOR_RE.test(finalColor)) throw new Error('Invalid color format — expected #rrggbb');
   const tag = {
     id: crypto.randomUUID(),
-    name: name.trim(),
-    color: color || '#58a6ff',
+    name: trimmed,
+    color: finalColor,
     created_at: new Date().toISOString(),
   };
   db.prepare('INSERT INTO tags (id, name, color, created_at) VALUES (?, ?, ?, ?)').run(
@@ -45,7 +51,9 @@ function updateTag(id, updates) {
   const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(id);
   if (!tag) return null;
   const name = updates.name !== undefined ? updates.name.trim() : tag.name;
+  if (!name) throw new Error('Tag name is required');
   const color = updates.color !== undefined ? updates.color : tag.color;
+  if (!HEX_COLOR_RE.test(color)) throw new Error('Invalid color format — expected #rrggbb');
   db.prepare('UPDATE tags SET name = ?, color = ? WHERE id = ?').run(name, color, id);
   return { ...tag, name, color };
 }

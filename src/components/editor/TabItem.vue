@@ -82,12 +82,6 @@ const label = computed(() => {
   height: 14px;
   fill: currentColor;
 }
-.tab-icon-welcome {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-muted);
-  line-height: 1;
-}
 .tab-label {
   overflow: hidden;
   text-overflow: ellipsis;

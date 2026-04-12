@@ -175,11 +175,15 @@ async function doRename() {
 async function doDelete() {
   const tag = contextMenu.value.tag;
   closeContextMenu();
+  const count = getCount(tag.id);
+  if (count > 0 && !confirm(`Delete tag "${tag.name}"? This will remove it from ${count} session${count > 1 ? 's' : ''}.`)) return;
   await tagsStore.remove(tag.id);
 }
 
 // --- Delete (from inline button) ---
 async function doDeleteDirect(tag) {
+  const count = getCount(tag.id);
+  if (count > 0 && !confirm(`Delete tag "${tag.name}"? This will remove it from ${count} session${count > 1 ? 's' : ''}.`)) return;
   await tagsStore.remove(tag.id);
 }
 </script>

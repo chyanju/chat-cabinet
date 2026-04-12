@@ -126,13 +126,12 @@ export const useTabsStore = defineStore('tabs', {
       if (!tab || tab.sessionData) return;
 
       tab.loading = true;
-      const session = await fetchSession(tab.sessionPath);
-      tab.loading = false;
-
-      if (!session.error) {
-        tab.sessionData = session;
-      } else {
-        tab.error = session.error;
+      try {
+        tab.sessionData = await fetchSession(tab.sessionPath);
+      } catch (e) {
+        tab.error = e.message || String(e);
+      } finally {
+        tab.loading = false;
       }
     },
   },

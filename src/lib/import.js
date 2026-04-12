@@ -31,3 +31,24 @@ export function importSessionFromFile(file) {
     reader.readAsText(file);
   });
 }
+
+/**
+ * Open a native file picker for .json files, import, and open as a viewed tab.
+ * @param {Function} openViewed - The tabs store's openViewed action.
+ */
+export function browseForFile(openViewed) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const result = await importSessionFromFile(file);
+    if (result.error) {
+      console.error('[open-file]', result.error);
+      return;
+    }
+    openViewed(result.data);
+  };
+  input.click();
+}

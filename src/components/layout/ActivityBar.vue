@@ -4,6 +4,7 @@
       <button
         class="activity-btn"
         :class="{ active: uiStore.activeView === view.id }"
+        :aria-label="view.label"
         @click="uiStore.setView(view.id)"
         v-html="view.icon"
       />
