@@ -71,28 +71,36 @@
 
       <!-- Privacy Mode -->
       <div class="popover-wrapper" @mouseenter="showPrivacy = true" @mouseleave="showPrivacy = false">
-        <button class="menubar-icon-btn" :class="{ active: privacyActive }" title="Privacy Mode" @click="togglePrivacyAll">
+        <button class="menubar-icon-btn" :class="{ active: uiStore.privacyEnabled }" title="Privacy Mode" @click="togglePrivacy">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
         </button>
         <Transition name="fade">
           <div v-show="showPrivacy" class="menubar-popover privacy-popover">
-            <div class="popover-header">Privacy Mode</div>
+            <div class="popover-header privacy-header-row">
+              <span>Privacy Mode</span>
+              <sl-switch
+                size="small"
+                :checked="uiStore.privacyEnabled"
+                :disabled="!hasAnyPreset"
+                @sl-change="uiStore.setPrivacyEnabled($event.target.checked)"
+              ></sl-switch>
+            </div>
             <div class="popover-options">
               <sl-checkbox
                 v-for="rule in rules"
                 :key="rule.id"
-                :checked="!!uiStore.redactionToggles[rule.id]"
-                @sl-change="uiStore.toggleRedaction(rule.id)"
+                :checked="!!uiStore.privacyPresets[rule.id]"
+                @sl-change="uiStore.togglePrivacyPreset(rule.id)"
               >
                 <span class="option-label">{{ rule.label }}</span>
                 <span class="option-desc">{{ rule.description }}</span>
               </sl-checkbox>
             </div>
             <div class="popover-actions">
-              <button class="popover-btn" @click="selectAll">Select All</button>
-              <button class="popover-btn" @click="uiStore.resetRedactions()">Reset</button>
+              <button class="popover-btn" @click="selectAllPresets">Select All</button>
+              <button class="popover-btn" @click="uiStore.resetPrivacyPresets()">Reset</button>
             </div>
           </div>
         </Transition>
@@ -121,6 +129,7 @@ import '@shoelace-style/shoelace/dist/components/menu/menu.js';
 import '@shoelace-style/shoelace/dist/components/menu-item/menu-item.js';
 import '@shoelace-style/shoelace/dist/components/divider/divider.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 
 const uiStore = useUiStore();
 const tabsStore = useTabsStore();
@@ -147,20 +156,17 @@ const exportCfg = reactive({
   timestamps: true,
 });
 
-const privacyActive = computed(() => {
-  return Object.values(uiStore.redactionToggles).some(Boolean);
+const hasAnyPreset = computed(() => {
+  return Object.values(uiStore.privacyPresets).some(Boolean);
 });
 
-function togglePrivacyAll() {
-  if (privacyActive.value) {
-    uiStore.resetRedactions();
-  } else {
-    uiStore.selectAllRedactions(rules.map((r) => r.id));
-  }
+function togglePrivacy() {
+  if (!hasAnyPreset.value) return;
+  uiStore.setPrivacyEnabled(!uiStore.privacyEnabled);
 }
 
-function selectAll() {
-  uiStore.selectAllRedactions(rules.map((r) => r.id));
+function selectAllPresets() {
+  uiStore.selectAllPrivacyPresets(rules.map((r) => r.id));
 }
 
 function doExport(format) {
@@ -316,6 +322,19 @@ function onHelpSelect(e) {
   letter-spacing: 0.5px;
   color: var(--text-muted);
   margin-bottom: 8px;
+}
+.privacy-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.privacy-header-row sl-switch {
+  --height: 16px;
+  --width: 30px;
+  --thumb-size: 12px;
+}
+.privacy-header-row sl-switch::part(label) {
+  display: none;
 }
 .popover-options {
   display: flex;

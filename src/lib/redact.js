@@ -126,12 +126,13 @@ export const REDACTION_RULES = [
 export function redact(text) {
   if (!text) return text;
   const ui = useUiStore();
-  const toggles = ui.redactionToggles;
-  if (!toggles || Object.keys(toggles).length === 0) return text;
+  if (!ui.privacyEnabled) return text;
+  const presets = ui.privacyPresets;
+  if (!presets || Object.keys(presets).length === 0) return text;
 
   let result = text;
   for (const rule of REDACTION_RULES) {
-    if (toggles[rule.id]) {
+    if (presets[rule.id]) {
       result = rule.replacer(result);
     }
   }

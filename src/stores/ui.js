@@ -9,7 +9,8 @@ export const useUiStore = defineStore('ui', {
     detailCollapsed: false,
     detailWidth: 280,
     sidebarWidth: 300,
-    redactionToggles: {},
+    privacyEnabled: false,
+    privacyPresets: {},
   }),
   actions: {
     setView(view) {
@@ -44,16 +45,26 @@ export const useUiStore = defineStore('ui', {
     setDetailWidth(w) {
       this.detailWidth = Math.max(200, Math.min(400, w));
     },
-    toggleRedaction(ruleId) {
-      this.redactionToggles[ruleId] = !this.redactionToggles[ruleId];
+    togglePrivacyPreset(ruleId) {
+      this.privacyPresets[ruleId] = !this.privacyPresets[ruleId];
+      // Auto-disable master toggle if no presets remain
+      if (!Object.values(this.privacyPresets).some(Boolean)) {
+        this.privacyEnabled = false;
+      }
     },
-    resetRedactions() {
-      this.redactionToggles = {};
+    resetPrivacyPresets() {
+      this.privacyPresets = {};
+      this.privacyEnabled = false;
     },
-    selectAllRedactions(ruleIds) {
+    selectAllPrivacyPresets(ruleIds) {
       const obj = {};
       for (const id of ruleIds) obj[id] = true;
-      this.redactionToggles = obj;
+      this.privacyPresets = obj;
+    },
+    setPrivacyEnabled(val) {
+      // Only allow enabling if at least one preset is selected
+      if (val && !Object.values(this.privacyPresets).some(Boolean)) return;
+      this.privacyEnabled = val;
     },
   },
 });
