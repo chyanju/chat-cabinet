@@ -1,13 +1,14 @@
 /**
- * SQLite database layer for ~/.cabinet/cabinet.db
+ * SQLite database layer for ~/.cabinet/cabinet.db (or ~/.cabinet-dev/ in dev mode)
  */
 const Database = require('better-sqlite3');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-const CABINET_DIR = path.join(os.homedir(), '.cabinet');
-const DB_PATH = path.join(CABINET_DIR, 'cabinet.db');
+let CABINET_DIR = path.join(os.homedir(), '.cabinet');
+let DB_PATH = path.join(CABINET_DIR, 'cabinet.db');
+let IS_DEV = false;
 
 let db = null;
 
@@ -16,7 +17,15 @@ function getDb() {
   return db;
 }
 
-function initDb() {
+function isDev() { return IS_DEV; }
+function getCabinetDir() { return CABINET_DIR; }
+
+function initDb(opts = {}) {
+  IS_DEV = !!opts.dev;
+  if (IS_DEV) {
+    CABINET_DIR = path.join(os.homedir(), '.cabinet-dev');
+    DB_PATH = path.join(CABINET_DIR, 'cabinet.db');
+  }
   fs.mkdirSync(CABINET_DIR, { recursive: true });
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
@@ -65,4 +74,4 @@ function closeDb() {
   }
 }
 
-module.exports = { CABINET_DIR, getDb, initDb, closeDb };
+module.exports = { getCabinetDir, getDb, initDb, closeDb, isDev };

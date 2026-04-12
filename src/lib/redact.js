@@ -138,11 +138,3 @@ export function redact(text) {
   }
   return result;
 }
-
-/**
- * Redact, then render through a transform (e.g. markdown).
- * Use this for v-html content where we need to redact before markdown parsing.
- */
-export function redactMarkdown(text, renderFn) {
-  return renderFn(redact(text));
-}

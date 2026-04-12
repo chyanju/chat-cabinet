@@ -1,5 +1,9 @@
+const _portParam = new URLSearchParams(window.location.search).get('_port');
+const _apiBase = _portParam && /^\d{1,5}$/.test(_portParam) && parseInt(_portParam) <= 65535
+  ? `http://localhost:${_portParam}` : '';
+
 function apiUrl(path) {
-  return path;
+  return _apiBase + path;
 }
 
 export async function fetchSessions() {
@@ -66,4 +70,24 @@ export function pullSession(id) {
 
 export function revealFolder(id) {
   return postJson('/api/session/reveal', { id });
+}
+
+export function revealDir(dir) {
+  return postJson('/api/reveal-dir', { dir });
+}
+
+export function syncSessions() {
+  return postJson('/api/sync', {});
+}
+
+export async function fetchInfo() {
+  const url = apiUrl('/api/info');
+  let res;
+  try {
+    res = await fetch(url);
+  } catch (e) {
+    return null;
+  }
+  if (!res.ok) return null;
+  return await res.json();
 }

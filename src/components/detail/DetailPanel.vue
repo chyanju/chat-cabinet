@@ -60,6 +60,7 @@ function startResize(e) {
   overflow-x: hidden;
   position: relative;
   min-width: 280px;
+  z-index: 0;
 }
 .dp-resize-handle {
   position: absolute;

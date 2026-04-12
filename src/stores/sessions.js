@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchSessions as apiFetchSessions } from '../lib/api.js';
+import { fetchSessions as apiFetchSessions, syncSessions as apiSync } from '../lib/api.js';
 import { getSourceKey } from '../lib/sources.js';
 
 export const useSessionsStore = defineStore('sessions', {
@@ -58,6 +58,7 @@ export const useSessionsStore = defineStore('sessions', {
       this.loading = true;
       this.error = null;
       try {
+        await apiSync();
         this.sessions = await apiFetchSessions();
       } catch (e) {
         this.sessions = [];

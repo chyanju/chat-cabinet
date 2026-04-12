@@ -125,7 +125,7 @@
             <img src="/logo.png" alt="" class="about-logo">
             <span class="about-title">Chat Cabinet</span>
           </div>
-          <div class="about-version">v0.3.0</div>
+          <div class="about-version">v0.3.1</div>
           <p class="about-desc">A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, and Cursor.</p>
           <div class="about-footer">
             <button class="about-close-btn" @click="showAbout = false">Close</button>
@@ -487,7 +487,8 @@ function onHelpSelect(e) {
 
 /* Shoelace dropdown overrides */
 sl-dropdown::part(panel) {
-  min-width: 220px;
+  min-width: 180px;
+  width: max-content;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -501,6 +502,9 @@ sl-menu-item::part(base) {
   font-size: 12px;
   color: var(--text);
   padding: 5px 14px;
+}
+sl-menu-item::part(suffix) {
+  margin-left: 24px;
 }
 sl-menu-item::part(base):hover {
   background: var(--accent-dim);

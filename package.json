@@ -1,10 +1,10 @@
 {
   "name": "chat-cabinet",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Browse and view local AI coding assistant session logs",
   "main": "server.js",
   "scripts": {
-    "dev": "concurrently \"node server.js\" \"vite\"",
+    "dev": "concurrently \"node server.js --dev\" \"vite\"",
     "dev:vite": "vite",
     "build": "vite build",
     "preview": "vite preview",

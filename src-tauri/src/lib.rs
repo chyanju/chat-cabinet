@@ -48,6 +48,7 @@ fn spawn_node_server(is_dev: bool) -> Result<(Child, u16), String> {
         .arg(&server_js)
         .arg("--port")
         .arg(port_arg)
+        .args(if is_dev { vec!["--dev"] } else { vec![] })
         .current_dir(&server_dir)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -79,7 +80,7 @@ pub fn run() {
 
     let (mut child, port) = spawn_node_server(is_dev).expect("Failed to start backend server");
     let server_url = format!("http://localhost:{}", port);
-    let dev_url = "http://localhost:5173".to_string();
+    let dev_url = format!("http://localhost:5173/?_port={}", port);
 
     if headless {
         // CLI fallback: no GUI, just keep the Node server running until interrupted.

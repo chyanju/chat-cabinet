@@ -2,8 +2,12 @@
  * Tag API client — CRUD operations for tags.
  */
 
+const _portParam = new URLSearchParams(window.location.search).get('_port');
+const _apiBase = _portParam && /^\d{1,5}$/.test(_portParam) && parseInt(_portParam) <= 65535
+  ? `http://localhost:${_portParam}` : '';
+
 function apiUrl(path) {
-  return path;
+  return _apiBase + path;
 }
 
 export async function fetchTags() {

@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onUnmounted } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
 import { useSessionsStore } from '../../stores/sessions.js';
 import { formatTime } from '../../lib/format.js';
@@ -116,6 +116,8 @@ const hasSourcePath = computed(() => !!meta.value?.source_path);
 const busy = ref(false);
 const pullSuccess = ref(false);
 let pullTimer = null;
+
+onUnmounted(() => { if (pullTimer) clearTimeout(pullTimer); });
 
 async function refreshActiveSession() {
   // Refresh session list to get updated has_data

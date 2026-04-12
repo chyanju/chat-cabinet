@@ -1,7 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { initDb, closeDb } = require('./server/db');
+const { initDb, closeDb, isDev, getCabinetDir } = require('./server/db');
 const { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession } = require('./server/sessions');
 const { listTags, createTag, deleteTag, assignTag, unassignTag, updateTag } = require('./server/tags');
 
@@ -22,10 +22,16 @@ function parseBody(req) {
   });
 }
 
+function corsOrigin() {
+  if (isDev()) return '*';
+  const addr = server.address();
+  return addr ? `http://localhost:${addr.port}` : 'http://localhost';
+}
+
 function jsonResponse(res, status, data) {
   res.writeHead(status, {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': corsOrigin(),
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   });
@@ -38,11 +44,29 @@ const server = http.createServer(async (req, res) => {
 
   if (method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': corsOrigin(),
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     });
     res.end();
+    return;
+  }
+
+  // ── Info API ──────────────────────────────────────────
+  if (url.pathname === '/api/info' && method === 'GET') {
+    const addr = server.address();
+    const port = addr ? addr.port : null;
+    let appUrl = port ? `http://localhost:${port}` : null;
+    // In dev mode the frontend is served by Vite on 5173, not by the backend
+    if (isDev() && port) {
+      appUrl = `http://localhost:5173/?_port=${port}`;
+    }
+    jsonResponse(res, 200, {
+      dev: isDev(),
+      port,
+      url: appUrl,
+      dataDir: getCabinetDir(),
+    });
     return;
   }
 
@@ -125,6 +149,29 @@ const server = http.createServer(async (req, res) => {
       else if (process.platform === 'win32') spawn('explorer', [dir]);
       else spawn('xdg-open', [dir]);
       jsonResponse(res, 200, { ok: true, dir });
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/reveal-dir' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      if (!body.dir) {
+        jsonResponse(res, 400, { error: 'Missing dir parameter' });
+        return;
+      }
+      const resolved = path.resolve(body.dir);
+      if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+        jsonResponse(res, 400, { error: 'Invalid directory' });
+        return;
+      }
+      const { spawn } = require('child_process');
+      if (process.platform === 'darwin') spawn('open', [resolved]);
+      else if (process.platform === 'win32') spawn('explorer', [resolved]);
+      else spawn('xdg-open', [resolved]);
+      jsonResponse(res, 200, { ok: true });
     } catch (e) {
       jsonResponse(res, 400, { error: e.message });
     }
@@ -231,7 +278,7 @@ const server = http.createServer(async (req, res) => {
  */
 function startServer(opts = {}) {
   const port = opts.port ?? DEFAULT_PORT;
-  initDb();
+  initDb({ dev: !!opts.dev });
   try {
     console.log('Syncing sessions...');
     const syncResult = syncSessions();
@@ -240,30 +287,44 @@ function startServer(opts = {}) {
     console.error('Sync failed (continuing with existing data):', e.message);
   }
   return new Promise((resolve, reject) => {
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        reject(new Error(`Port ${port} is already in use.`));
+    function onError(err) {
+      if (err.code === 'EADDRINUSE' && port !== 0) {
+        console.log(`Port ${port} in use — falling back to a random available port...`);
+        server.once('error', (e) => reject(e));
+        server.listen(0, onListening);
       } else {
         reject(err);
       }
-    });
-    server.listen(port, () => {
+    }
+    function onListening() {
       const actualPort = server.address().port;
       const url = `http://localhost:${actualPort}`;
       console.log(`Chat Cabinet running at ${url}`);
       resolve({ server, port: actualPort, url });
-    });
+    }
+    server.once('error', onError);
+    server.listen(port, onListening);
   });
 }
+
+// Graceful shutdown
+function cleanup() {
+  closeDb();
+  process.exit(0);
+}
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
 
 module.exports = { startServer };
 
 function parseArgs(argv) {
-  const opts = { port: DEFAULT_PORT, help: false };
+  const opts = { port: DEFAULT_PORT, help: false, dev: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') {
       opts.help = true;
+    } else if (a === '--dev') {
+      opts.dev = true;
     } else if (a === '--port' || a === '-p') {
       const v = parseInt(argv[++i], 10);
       if (Number.isNaN(v) || v < 0 || v > 65535) {
@@ -291,6 +352,7 @@ Usage:
 
 Options:
   -p, --port <n>   Port to listen on (default: ${DEFAULT_PORT}, use 0 for random)
+  --dev            Dev mode (uses ~/.cabinet-dev for data)
   -h, --help       Show this help
 
 In headless mode, open the printed URL in a browser to use the UI.
@@ -311,7 +373,7 @@ if (require.main === module) {
     printHelp();
     process.exit(0);
   }
-  startServer({ port: opts.port }).catch(err => {
+  startServer({ port: opts.port, dev: opts.dev }).catch(err => {
     console.error(err.message);
     process.exit(1);
   });

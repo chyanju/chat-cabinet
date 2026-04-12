@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onUnmounted } from 'vue';
 import { formatTime } from '../../lib/format.js';
 import { SOURCE_LABELS, SOURCE_COLORS, getSourceKey } from '../../lib/sources.js';
 import { redact } from '../../lib/redact.js';
@@ -45,6 +45,8 @@ const shortCwd = computed(() => {
 });
 
 let clickTimer = null;
+
+onUnmounted(() => { if (clickTimer) clearTimeout(clickTimer); });
 
 function onClick() {
   if (clickTimer) clearTimeout(clickTimer);

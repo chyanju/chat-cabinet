@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { fetchInfo } from '../lib/api.js';
 
 export const useUiStore = defineStore('ui', {
   state: () => ({
@@ -13,6 +14,7 @@ export const useUiStore = defineStore('ui', {
     sidebarWidth: 300,
     privacyEnabled: false,
     privacyPresets: {},
+    serverInfo: null, // { dev, port, url, dataDir }
   }),
   actions: {
     setView(view) {
@@ -80,6 +82,9 @@ export const useUiStore = defineStore('ui', {
       // Only allow enabling if at least one preset is selected
       if (val && !Object.values(this.privacyPresets).some(Boolean)) return;
       this.privacyEnabled = val;
+    },
+    async loadServerInfo() {
+      this.serverInfo = await fetchInfo();
     },
   },
 });

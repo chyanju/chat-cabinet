@@ -90,7 +90,7 @@ onMounted(async () => {
   document.addEventListener('keydown', onKeydown);
   document.addEventListener('dragover', onDragOver);
   document.addEventListener('drop', onDrop);
-  await Promise.all([sessionsStore.refresh(), tagsStore.refresh()]);
+  await Promise.all([sessionsStore.refresh(), tagsStore.refresh(), uiStore.loadServerInfo()]);
 });
 
 onUnmounted(() => {

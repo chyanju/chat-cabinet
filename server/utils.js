@@ -27,7 +27,11 @@ function readWorkspaceFolder(wsHashDir) {
     const wsJson = path.join(wsHashDir, 'workspace.json');
     const data = JSON.parse(fs.readFileSync(wsJson, 'utf-8'));
     const folder = data.folder || '';
-    return folder.replace(/^file:\/\//, '').replace(/^\/\//, '');
+    try {
+      return new URL(folder).pathname;
+    } catch {
+      return folder.replace(/^file:\/\//, '').replace(/^\/\//, '');
+    }
   } catch {
     return '';
   }
