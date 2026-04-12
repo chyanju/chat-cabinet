@@ -1,6 +1,6 @@
 <template>
   <div id="app-root" :class="{ 'detail-collapsed': uiStore.detailCollapsed }"
-       :style="{ '--detail-panel-w': uiStore.detailWidth + 'px' }">
+       :style="{ '--sidebar-w': uiStore.sidebarWidth + 'px', '--detail-panel-w': uiStore.detailWidth + 'px' }">
     <MenuBar />
     <ActivityBar />
     <SidebarPanel />

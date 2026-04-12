@@ -143,11 +143,18 @@ watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {
 }
 .loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 40px;
+  gap: 12px;
+  padding: 60px 40px;
   color: var(--text-muted);
+  font-size: 13px;
+}
+.loading sl-spinner {
+  font-size: 28px;
+  --indicator-color: var(--accent);
+  --track-color: var(--border);
 }
 .conversation {
   padding: 16px 20px 80px;

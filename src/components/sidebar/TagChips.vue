@@ -1,9 +1,9 @@
 <template>
-  <div class="source-filter">
+  <div v-if="tagsStore.tags.length > 0" class="tag-filter">
     <div class="filter-header" @click="collapsed = !collapsed">
-      <span class="filter-label">Sources</span>
-      <span class="filter-active-count" v-if="collapsed && uiStore.activeSourceFilters.size > 0">
-        {{ uiStore.activeSourceFilters.size }} active
+      <span class="filter-label">Tags</span>
+      <span class="filter-active-count" v-if="collapsed && uiStore.activeTagFilters.size > 0">
+        {{ uiStore.activeTagFilters.size }} active
       </span>
       <svg class="filter-chevron" :class="{ collapsed }" viewBox="0 0 12 12" width="12" height="12">
         <path d="M2 4 L6 8 L10 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -11,49 +11,36 @@
     </div>
     <div v-show="!collapsed" class="filter-chips">
       <button
+        v-for="tag in tagsStore.tags"
+        :key="tag.id"
         class="filter-chip"
-        :class="{ active: uiStore.activeSourceFilters.size === 0 }"
-        @click="uiStore.clearSourceFilters()"
+        :class="{ active: uiStore.activeTagFilters.has(tag.id) }"
+        @click="uiStore.toggleTag(tag.id)"
       >
-        All ({{ sessionsStore.sessions.length }})
-      </button>
-      <button
-        v-for="[key, count] in sourceCounts"
-        :key="key"
-        class="filter-chip"
-        :class="{ active: uiStore.activeSourceFilters.has(key) }"
-        @click="uiStore.toggleSource(key)"
-      >
-        <span class="chip-dot" :style="{ background: SOURCE_COLORS[key] || '#8b949e' }"></span>
-        {{ SOURCE_LABELS[key] || key }} ({{ count }})
+        <span class="chip-dot" :style="{ background: tag.color }"></span>
+        {{ tag.name }} ({{ getCount(tag.id) }})
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useUiStore } from '../../stores/ui.js';
-import { useSessionsStore } from '../../stores/sessions.js';
-import { SOURCE_LABELS, SOURCE_COLORS, getSourceKey } from '../../lib/sources.js';
+import { useTagsStore } from '../../stores/tags.js';
 
 const uiStore = useUiStore();
-const sessionsStore = useSessionsStore();
+const tagsStore = useTagsStore();
 const collapsed = ref(false);
 
-const sourceCounts = computed(() => {
-  const map = new Map();
-  for (const s of sessionsStore.sessions) {
-    const key = getSourceKey(s);
-    map.set(key, (map.get(key) || 0) + 1);
-  }
-  return [...map.entries()];
-});
+function getCount(tagId) {
+  return tagsStore.assignments.filter(a => a.tag_id === tagId).length;
+}
 </script>
 
 <style scoped>
-.source-filter {
-  padding: 6px 10px 4px;
+.tag-filter {
+  padding: 2px 10px 4px;
 }
 .filter-header {
   display: flex;

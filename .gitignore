@@ -4,3 +4,11 @@ dist/
 .DS_Store
 .env
 .env.local
+
+# Rust / Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Temporary icon generation output
+app-icon.png
+

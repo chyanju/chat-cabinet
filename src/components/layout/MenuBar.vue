@@ -1,7 +1,7 @@
 <template>
   <div class="menubar">
     <div class="menubar-brand">
-      <img src="/cabinet.svg" alt="" class="menubar-brand-icon">
+      <img src="/logo.png" alt="" class="menubar-brand-icon">
       <span>Chat Cabinet</span>
     </div>
 

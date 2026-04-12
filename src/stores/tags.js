@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
-import { fetchTags as apiFetchTags, createTag as apiCreateTag, deleteTag as apiDeleteTag, assignTag as apiAssignTag, unassignTag as apiUnassignTag } from '../lib/tag-api.js';
+import { fetchTags as apiFetchTags, createTag as apiCreateTag, deleteTag as apiDeleteTag, assignTag as apiAssignTag, unassignTag as apiUnassignTag, updateTag as apiUpdateTag } from '../lib/tag-api.js';
 
 export const useTagsStore = defineStore('tags', {
   state: () => ({
     tags: [],
     assignments: [],
+    error: null,
   }),
   getters: {
     getTagsForSession: (state) => (sessionPath) => {
@@ -16,14 +17,26 @@ export const useTagsStore = defineStore('tags', {
   },
   actions: {
     async refresh() {
-      const data = await apiFetchTags();
-      this.tags = data.tags;
-      this.assignments = data.assignments;
+      this.error = null;
+      try {
+        const data = await apiFetchTags();
+        this.tags = data.tags || [];
+        this.assignments = data.assignments || [];
+      } catch (e) {
+        this.tags = [];
+        this.assignments = [];
+        this.error = e.message || String(e);
+        console.error('[tags.refresh]', e);
+      }
     },
     async create(name, color) {
       const tag = await apiCreateTag(name, color);
       await this.refresh();
       return tag;
+    },
+    async update(id, updates) {
+      await apiUpdateTag(id, updates);
+      await this.refresh();
     },
     async remove(id) {
       await apiDeleteTag(id);

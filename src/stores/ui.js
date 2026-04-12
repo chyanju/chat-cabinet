@@ -8,6 +8,7 @@ export const useUiStore = defineStore('ui', {
     searchQuery: '',
     detailCollapsed: false,
     detailWidth: 280,
+    sidebarWidth: 300,
   }),
   actions: {
     setView(view) {
@@ -35,6 +36,9 @@ export const useUiStore = defineStore('ui', {
     },
     toggleDetail() {
       this.detailCollapsed = !this.detailCollapsed;
+    },
+    setSidebarWidth(w) {
+      this.sidebarWidth = Math.max(200, Math.min(450, w));
     },
     setDetailWidth(w) {
       this.detailWidth = Math.max(200, Math.min(400, w));

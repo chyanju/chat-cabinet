@@ -5,10 +5,7 @@ const { listAllSessions, loadSession } = require('./server/sessions');
 const { listTags, createTag, deleteTag, assignTag, unassignTag, updateTag } = require('./server/tags');
 const { ensureCabinetDir } = require('./server/storage');
 
-const PORT = 3456;
-
-// Ensure ~/.cabinet/ exists on startup
-ensureCabinetDir();
+const DEFAULT_PORT = 3456;
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -26,13 +23,28 @@ function parseBody(req) {
 }
 
 function jsonResponse(res, status, data) {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  });
   res.end(JSON.stringify(data));
 }
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
+
+  if (method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    res.end();
+    return;
+  }
 
   // ── Session API ──────────────────────────────────────
   if (url.pathname === '/api/sessions' && method === 'GET') {
@@ -149,14 +161,89 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use. Kill the other process or choose a different port.`);
-    process.exit(1);
-  }
-  throw err;
-});
+/**
+ * Start the Chat Cabinet server.
+ * @param {object} [opts]
+ * @param {number} [opts.port=3456] - Port to listen on (0 = random available port)
+ * @returns {Promise<{server: http.Server, port: number, url: string}>}
+ */
+function startServer(opts = {}) {
+  const port = opts.port ?? DEFAULT_PORT;
+  ensureCabinetDir();
+  return new Promise((resolve, reject) => {
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        reject(new Error(`Port ${port} is already in use.`));
+      } else {
+        reject(err);
+      }
+    });
+    server.listen(port, () => {
+      const actualPort = server.address().port;
+      const url = `http://localhost:${actualPort}`;
+      console.log(`Chat Cabinet running at ${url}`);
+      resolve({ server, port: actualPort, url });
+    });
+  });
+}
 
-server.listen(PORT, () => {
-  console.log(`Chat Cabinet running at http://localhost:${PORT}`);
-});
+module.exports = { startServer };
+
+function parseArgs(argv) {
+  const opts = { port: DEFAULT_PORT, help: false };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--help' || a === '-h') {
+      opts.help = true;
+    } else if (a === '--port' || a === '-p') {
+      const v = parseInt(argv[++i], 10);
+      if (Number.isNaN(v) || v < 0 || v > 65535) {
+        throw new Error(`Invalid port: ${argv[i]}`);
+      }
+      opts.port = v;
+    } else if (a.startsWith('--port=')) {
+      const v = parseInt(a.slice(7), 10);
+      if (Number.isNaN(v) || v < 0 || v > 65535) {
+        throw new Error(`Invalid port: ${a}`);
+      }
+      opts.port = v;
+    } else {
+      throw new Error(`Unknown argument: ${a}`);
+    }
+  }
+  return opts;
+}
+
+function printHelp() {
+  console.log(`Chat Cabinet — headless server mode
+
+Usage:
+  node server.js [options]
+
+Options:
+  -p, --port <n>   Port to listen on (default: ${DEFAULT_PORT}, use 0 for random)
+  -h, --help       Show this help
+
+In headless mode, open the printed URL in a browser to use the UI.
+For the desktop GUI, run the bundled Chat Cabinet app instead.`);
+}
+
+// Direct execution: node server.js
+if (require.main === module) {
+  let opts;
+  try {
+    opts = parseArgs(process.argv.slice(2));
+  } catch (e) {
+    console.error(e.message);
+    console.error('Run with --help for usage.');
+    process.exit(2);
+  }
+  if (opts.help) {
+    printHelp();
+    process.exit(0);
+  }
+  startServer({ port: opts.port }).catch(err => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}

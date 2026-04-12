@@ -6,6 +6,7 @@ export const useSessionsStore = defineStore('sessions', {
   state: () => ({
     sessions: [],
     loading: false,
+    error: null,
   }),
   getters: {
     filteredSessions(state) {
@@ -43,8 +44,13 @@ export const useSessionsStore = defineStore('sessions', {
   actions: {
     async refresh() {
       this.loading = true;
+      this.error = null;
       try {
         this.sessions = await apiFetchSessions();
+      } catch (e) {
+        this.sessions = [];
+        this.error = e.message || String(e);
+        console.error('[sessions.refresh]', e);
       } finally {
         this.loading = false;
       }
