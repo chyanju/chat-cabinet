@@ -212,7 +212,7 @@ function onFileSelect(e) {
 function onHelpSelect(e) {
   const val = e.detail.item.value;
   if (val === 'github') window.open('https://github.com/chyanju/chat-cabinet', '_blank');
-  else if (val === 'about') alert('Chat Cabinet v2.0.0\nA local viewer for AI coding assistant session logs.');
+  else if (val === 'about') alert('Chat Cabinet v0.2.0\nA local viewer for AI coding assistant session logs.');
 }
 </script>
 

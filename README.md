@@ -6,6 +6,8 @@ A local viewer for browsing AI coding assistant session logs from Codex CLI, VS 
 
 - Automatically discovers local session logs from supported tools
 - Lets you search, filter, tag, and inspect conversations in one UI
+- **Privacy Mode** — redact sensitive info (file paths, emails, API keys, IPs, etc.) with configurable presets
+- **Export** — export sessions to Markdown, plain text, or Cabinet JSON with selectable fields
 - Supports both desktop GUI mode and browser/headless mode
 
 ## Run It
