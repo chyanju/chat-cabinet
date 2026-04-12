@@ -14,6 +14,7 @@
 import { computed } from 'vue';
 import { formatTimeBrief } from '../../lib/format.js';
 import { renderMarkdown } from '../../lib/markdown.js';
+import { redact } from '../../lib/redact.js';
 
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 
@@ -31,7 +32,7 @@ const modelStr = computed(() => {
 
 const renderedContent = computed(() => {
   if (props.event.encrypted && !props.event.content) return '<em>(reasoning content encrypted)</em>';
-  return renderMarkdown(props.event.content || '');
+  return renderMarkdown(redact(props.event.content || ''));
 });
 </script>
 

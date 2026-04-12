@@ -1,38 +1,48 @@
 import { formatTime, formatTimeBrief } from './format.js';
+import { redact } from './redact.js';
+
+/**
+ * Apply redaction if privacy mode is active.
+ */
+function r(text) {
+  return redact(text) || '';
+}
 
 /**
  * Convert a Chat Cabinet session to text.
  * @param {object} session - Unified session data
  * @param {object} meta - Session metadata
  * @param {string} format - 'md' or 'txt'
- * @param {object} cfg - Export config (userMsg, assistantMsg, toolCalls, toolOutput, reasoning, systemPrompt, events, timestamps)
+ * @param {object} cfg - Export config
  */
 export function entriesToText(session, meta, format, cfg) {
   const lines = [];
   const isMd = format === 'md';
   const divider = isMd ? '\n---\n' : '\n' + '\u2500'.repeat(60) + '\n';
 
-  const model = session.model?.name || session.model?.id || meta.model_provider || 'unknown';
-  const cwd = session.workspace?.cwd || meta.cwd || '?';
-  const source = session.source?.tool || meta.source || '?';
-  const sid = session.session_id || meta.id;
+  if (cfg.metadata !== false) {
+    const model = session.model?.name || session.model?.id || meta.model_provider || 'unknown';
+    const cwd = r(session.workspace?.cwd || meta.cwd || '?');
+    const source = session.source?.tool || meta.source || '?';
+    const sid = session.session_id || meta.id;
 
-  if (isMd) {
-    lines.push('# Chat Cabinet Session ' + sid + '\n');
-    lines.push('- **Time:** ' + formatTime(session.created_at || meta.timestamp));
-    lines.push('- **Model:** ' + model);
-    lines.push('- **CWD:** ' + cwd);
-    lines.push('- **Source:** ' + source);
-    if (session.title) lines.push('- **Title:** ' + session.title);
-  } else {
-    lines.push('Chat Cabinet Session ' + sid);
-    lines.push('Time:   ' + formatTime(session.created_at || meta.timestamp));
-    lines.push('Model:  ' + model);
-    lines.push('CWD:    ' + cwd);
-    lines.push('Source: ' + source);
-    if (session.title) lines.push('Title:  ' + session.title);
+    if (isMd) {
+      lines.push('# Chat Cabinet Session ' + sid + '\n');
+      lines.push('- **Time:** ' + formatTime(session.created_at || meta.timestamp));
+      lines.push('- **Model:** ' + model);
+      lines.push('- **CWD:** ' + cwd);
+      lines.push('- **Source:** ' + source);
+      if (session.title) lines.push('- **Title:** ' + r(session.title));
+    } else {
+      lines.push('Chat Cabinet Session ' + sid);
+      lines.push('Time:   ' + formatTime(session.created_at || meta.timestamp));
+      lines.push('Model:  ' + model);
+      lines.push('CWD:    ' + cwd);
+      lines.push('Source: ' + source);
+      if (session.title) lines.push('Title:  ' + r(session.title));
+    }
+    lines.push(divider);
   }
-  lines.push(divider);
 
   for (const turn of (session.turns || [])) {
     for (const event of (turn.events || [])) {
@@ -50,7 +60,7 @@ export function entriesToText(session, meta, format, cfg) {
         } else {
           lines.push('[' + label + ']' + (tsStr ? ' (' + tsStr + ')' : ''));
         }
-        lines.push(event.content || '');
+        lines.push(r(event.content || ''));
         lines.push('');
       } else if (event.type === 'tool_call') {
         if (!cfg.toolCalls) continue;
@@ -59,25 +69,45 @@ export function entriesToText(session, meta, format, cfg) {
         const confStr = conf && conf !== 'unknown' ? ' [' + conf + ']' : '';
         if (isMd) {
           lines.push('#### Tool: `' + name + '`' + confStr + (tsStr ? '  \n*' + tsStr + '*' : '') + '\n');
-          if (event.input?.command) lines.push('```\n' + event.input.command + '\n```');
-          else if (event.input?.raw) lines.push('```\n' + event.input.raw.slice(0, 2000) + '\n```');
-          if (cfg.toolOutput && event.output?.text) lines.push('**Output:**\n```\n' + event.output.text.slice(0, 2000) + '\n```');
-          if (event.output?.error) lines.push('**Error:** ' + event.output.error);
+          if (event.input?.command) lines.push('```\n' + r(event.input.command) + '\n```');
+          else if (event.input?.file_path) lines.push('File: `' + r(event.input.file_path) + '`');
+          else if (event.input?.urls?.length) lines.push('URLs:\n' + event.input.urls.map(u => '- ' + r(u)).join('\n'));
+          else if (event.input?.raw) lines.push('```\n' + r(event.input.raw.slice(0, 2000)) + '\n```');
+          if (cfg.toolOutput && event.output?.text) lines.push('**Output:**\n```\n' + r(event.output.text.slice(0, 3000)) + '\n```');
+          if (event.output?.error) lines.push('**Error:** ' + r(event.output.error));
+          if (cfg.subagents && event.subagent?.prompt) lines.push('**Subagent prompt:**\n```\n' + r(event.subagent.prompt.slice(0, 2000)) + '\n```');
+          if (cfg.subagents && event.subagent?.result) {
+            const res = typeof event.subagent.result === 'string' ? event.subagent.result : JSON.stringify(event.subagent.result, null, 2);
+            lines.push('**Subagent result:**\n```\n' + r(res.slice(0, 3000)) + '\n```');
+          }
         } else {
           lines.push('[TOOL: ' + name + ']' + confStr + (tsStr ? ' (' + tsStr + ')' : ''));
-          if (event.input?.command) lines.push(event.input.command);
-          else if (event.input?.raw) lines.push(event.input.raw.slice(0, 2000));
-          if (cfg.toolOutput && event.output?.text) { lines.push('Output:'); lines.push(event.output.text.slice(0, 2000)); }
-          if (event.output?.error) lines.push('Error: ' + event.output.error);
+          if (event.input?.command) lines.push(r(event.input.command));
+          else if (event.input?.file_path) lines.push('File: ' + r(event.input.file_path));
+          else if (event.input?.urls?.length) lines.push('URLs: ' + event.input.urls.map(u => r(u)).join(', '));
+          else if (event.input?.raw) lines.push(r(event.input.raw.slice(0, 2000)));
+          if (cfg.toolOutput && event.output?.text) { lines.push('Output:'); lines.push(r(event.output.text.slice(0, 3000))); }
+          if (event.output?.error) lines.push('Error: ' + r(event.output.error));
+          if (cfg.subagents && event.subagent?.prompt) { lines.push('Subagent prompt:'); lines.push(r(event.subagent.prompt.slice(0, 2000))); }
+          if (cfg.subagents && event.subagent?.result) {
+            const res = typeof event.subagent.result === 'string' ? event.subagent.result : JSON.stringify(event.subagent.result, null, 2);
+            lines.push('Subagent result:'); lines.push(r(res.slice(0, 3000)));
+          }
         }
         lines.push('');
       } else if (event.type === 'thinking') {
         if (!cfg.reasoning) continue;
         if (event.content) {
-          const snippet = event.content.trim().slice(0, 500);
+          const snippet = r(event.content.trim().slice(0, 500));
           if (isMd) lines.push('> *Thinking:* ' + snippet + '\n');
           else lines.push('[THINKING] ' + snippet + '\n');
         }
+      } else if (event.type === 'file_edit') {
+        if (!cfg.fileEdits) continue;
+        const action = event.action || 'modify';
+        const uri = r(event.uri || '');
+        if (isMd) lines.push('> *File ' + action + ':* `' + uri + '`' + (tsStr ? ' \u00b7 ' + tsStr : '') + '\n');
+        else lines.push('[FILE ' + action.toUpperCase() + '] ' + uri + (tsStr ? ' \u00b7 ' + tsStr : '') + '\n');
       } else if (event.type === 'status') {
         if (!cfg.events) continue;
         const label = event.label || event.kind || '';

@@ -4,7 +4,7 @@
     <template v-else>
       <div v-if="title" class="dp-field">
         <span class="dp-field-label">Title</span>
-        <span class="dp-field-value dp-field-title">{{ title }}</span>
+        <span class="dp-field-value dp-field-title">{{ redact(title) }}</span>
       </div>
       <div class="dp-field">
         <span class="dp-field-label">Source</span>
@@ -20,7 +20,7 @@
       </div>
       <div class="dp-field">
         <span class="dp-field-label">CWD</span>
-        <span class="dp-field-value dp-field-mono">{{ cwd }}</span>
+        <span class="dp-field-value dp-field-mono">{{ redact(cwd) }}</span>
       </div>
       <div class="dp-field">
         <span class="dp-field-label">ID</span>
@@ -39,6 +39,7 @@ import { computed } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
 import { formatTime } from '../../lib/format.js';
 import { SOURCE_LABELS } from '../../lib/sources.js';
+import { redact } from '../../lib/redact.js';
 
 const tabsStore = useTabsStore();
 

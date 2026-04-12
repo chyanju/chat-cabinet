@@ -35,7 +35,7 @@
     <!-- Error -->
     <div v-else-if="kind === 'error'" class="msg-block msg-tool-error">
       <div class="msg-label">Error</div>
-      <div class="msg-body">{{ event.label || '' }}</div>
+      <div class="msg-body">{{ redact(event.label || '') }}</div>
     </div>
 
     <!-- Generic pill -->
@@ -48,6 +48,7 @@
 <script setup>
 import { computed } from 'vue';
 import { formatTimeBrief } from '../../lib/format.js';
+import { redact } from '../../lib/redact.js';
 
 const props = defineProps({
   event: { type: Object, required: true },

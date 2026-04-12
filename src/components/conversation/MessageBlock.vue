@@ -5,7 +5,7 @@
       <span v-if="event.timestamp" class="msg-ts">{{ formatTimeBrief(event.timestamp) }}</span>
     </div>
     <div v-if="isSystem" class="msg-body">
-      {{ (event.content || '').slice(0, 200) }}{{ (event.content || '').length > 200 ? '...' : '' }}
+      {{ redact((event.content || '').slice(0, 200)) }}{{ (event.content || '').length > 200 ? '...' : '' }}
     </div>
     <div v-if="isSystem">
       <sl-details summary="Full system prompt" class="system-details">
@@ -20,6 +20,7 @@
 import { computed } from 'vue';
 import { formatTimeBrief } from '../../lib/format.js';
 import { renderMarkdown } from '../../lib/markdown.js';
+import { redact } from '../../lib/redact.js';
 
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 
@@ -59,7 +60,7 @@ const label = computed(() => {
 });
 
 const renderedContent = computed(() => {
-  return renderMarkdown(props.event.content || '');
+  return renderMarkdown(redact(props.event.content || ''));
 });
 </script>
 

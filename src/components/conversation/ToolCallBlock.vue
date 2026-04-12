@@ -15,31 +15,31 @@
         <!-- Input -->
         <template v-if="input.command">
           <div class="tool-sub-label">Command:</div>
-          <div class="tool-cmd">{{ input.command }}</div>
+          <div class="tool-cmd">{{ redact(input.command) }}</div>
         </template>
         <template v-else-if="input.file_path && !input.raw">
-          <div class="tool-cmd">{{ input.file_path }}</div>
+          <div class="tool-cmd">{{ redact(input.file_path) }}</div>
         </template>
         <template v-else-if="input.urls && input.urls.length">
-          <div class="tool-cmd">{{ input.urls.join('\n') }}</div>
+          <div class="tool-cmd">{{ redact(input.urls.join('\n')) }}</div>
         </template>
         <template v-else-if="input.raw">
-          <div class="tool-cmd">{{ formattedRaw }}</div>
+          <div class="tool-cmd">{{ redact(formattedRaw) }}</div>
         </template>
 
         <!-- Subagent prompt -->
         <template v-if="event.subagent?.prompt">
           <div class="tool-sub-label">Prompt:</div>
-          <div class="tool-cmd">{{ event.subagent.prompt.slice(0, 2000) }}</div>
+          <div class="tool-cmd">{{ redact(event.subagent.prompt.slice(0, 2000)) }}</div>
         </template>
 
         <!-- Output -->
         <template v-if="output.error">
-          <div class="tool-exec-result exec-fail">{{ output.error }}</div>
+          <div class="tool-exec-result exec-fail">{{ redact(output.error) }}</div>
         </template>
         <template v-if="output.text">
           <div class="tool-sub-label">Output: {{ exitBadge }}</div>
-          <div class="tool-output">{{ output.text.slice(0, 3000) }}</div>
+          <div class="tool-output">{{ redact(output.text.slice(0, 3000)) }}</div>
         </template>
         <template v-else-if="output.exit_code != null">
           <div class="tool-exec-result" :class="output.exit_code === 0 ? 'exec-ok' : 'exec-fail'">
@@ -48,13 +48,13 @@
         </template>
         <template v-if="output.urls && output.urls.length">
           <div class="tool-sub-label">URLs:</div>
-          <div class="tool-output">{{ output.urls.join('\n') }}</div>
+          <div class="tool-output">{{ redact(output.urls.join('\n')) }}</div>
         </template>
 
         <!-- Subagent result -->
         <template v-if="event.subagent?.result">
           <div class="tool-sub-label">Result:</div>
-          <div class="tool-output">{{ formattedResult }}</div>
+          <div class="tool-output">{{ redact(formattedResult) }}</div>
         </template>
       </div>
     </sl-details>
@@ -64,6 +64,7 @@
 <script setup>
 import { computed } from 'vue';
 import { formatTimeBrief } from '../../lib/format.js';
+import { redact } from '../../lib/redact.js';
 
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 

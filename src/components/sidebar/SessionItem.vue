@@ -5,8 +5,8 @@
       <span class="session-item-badge" :style="badgeStyle">{{ srcLabel }}</span>
       <span v-if="session.archived" class="session-item-badge badge-archived">archived</span>
     </div>
-    <div v-if="session.title" class="session-item-title">{{ session.title }}</div>
-    <div class="session-item-cwd">{{ shortCwd }}</div>
+    <div v-if="session.title" class="session-item-title">{{ redact(session.title) }}</div>
+    <div class="session-item-cwd">{{ redact(shortCwd) }}</div>
     <div class="session-item-id">{{ session.id }}</div>
   </li>
 </template>
@@ -15,6 +15,7 @@
 import { computed, ref } from 'vue';
 import { formatTime } from '../../lib/format.js';
 import { SOURCE_LABELS, SOURCE_COLORS, getSourceKey } from '../../lib/sources.js';
+import { redact } from '../../lib/redact.js';
 
 const props = defineProps({
   session: { type: Object, required: true },

@@ -1,6 +1,9 @@
 <template>
   <div v-if="tabsStore.activeTab && !tabsStore.activeTab.isWelcome" class="dp-section dp-tags">
-    <div class="dp-section-title">Tags</div>
+    <div class="dp-section-header">
+      <span class="dp-section-title">Tags</span>
+      <sl-icon-button v-if="!showInput" name="plus-lg" label="Add tag" class="dp-tag-add-btn" @click="showInput = true" />
+    </div>
 
     <!-- Assigned tags -->
     <div class="dp-tags-list">
@@ -17,12 +20,8 @@
     </div>
 
     <!-- Tag input -->
-    <div class="dp-tag-add">
-      <template v-if="!showInput">
-        <sl-icon-button name="plus-lg" label="Add tag" class="dp-tag-add-btn" @click="showInput = true" />
-      </template>
+    <div v-if="showInput" class="dp-tag-add">
       <TagInput
-        v-else
         :all-tags="tagsStore.tags"
         :assigned-ids="assignedIds"
         @assign="onAssign"
@@ -76,13 +75,17 @@ async function onCreate(name) {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
 }
+.dp-section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
 .dp-section-title {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-muted);
-  margin-bottom: 8px;
 }
 .dp-tags-list {
   display: flex;
@@ -98,6 +101,9 @@ async function onCreate(name) {
 }
 .dp-tag-add {
   margin-top: 4px;
+}
+.dp-tag-add-btn {
+  margin-left: auto;
 }
 .dp-tag-add-btn::part(base) {
   color: var(--text-muted);

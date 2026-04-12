@@ -7,7 +7,6 @@
     <div class="dp-content">
       <DetailMetadata />
       <DetailTags />
-      <ExportSection />
     </div>
   </div>
 </template>
@@ -16,7 +15,6 @@
 import { useUiStore } from '../../stores/ui.js';
 import DetailMetadata from './DetailMetadata.vue';
 import DetailTags from './DetailTags.vue';
-import ExportSection from './ExportSection.vue';
 
 const uiStore = useUiStore();
 

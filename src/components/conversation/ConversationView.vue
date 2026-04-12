@@ -3,7 +3,7 @@
     <!-- Session start pill -->
     <div class="msg-event">
       <span class="event-pill session-start-pill">
-        Session{{ session.title ? ': ' + session.title : '' }}{{ sourceTool ? ' &middot; ' + sourceTool : '' }} &middot; {{ formatTimeBrief(session.created_at) }}
+        Session{{ session.title ? ': ' + redact(session.title) : '' }}{{ sourceTool ? ' &middot; ' + sourceTool : '' }} &middot; {{ formatTimeBrief(session.created_at) }}
       </span>
     </div>
 
@@ -17,7 +17,7 @@
           <span class="event-pill">
             {{ event.action === 'create' ? '\uD83D\uDCC4' : event.action === 'delete' ? '\uD83D\uDDD1\uFE0F' : '\u270F\uFE0F' }}
             {{ event.action || 'modify' }}
-            {{ (event.uri || '').replace(/^\/Users\/[^/]+/, '~') }}
+            {{ redact((event.uri || '').replace(/^\/Users\/[^/]+/, '~')) }}
           </span>
         </div>
       </template>
@@ -28,6 +28,7 @@
 <script setup>
 import { computed } from 'vue';
 import { formatTimeBrief } from '../../lib/format.js';
+import { redact } from '../../lib/redact.js';
 import MessageBlock from './MessageBlock.vue';
 import ToolCallBlock from './ToolCallBlock.vue';
 import ThinkingBlock from './ThinkingBlock.vue';

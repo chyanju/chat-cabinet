@@ -9,6 +9,7 @@ export const useUiStore = defineStore('ui', {
     detailCollapsed: false,
     detailWidth: 280,
     sidebarWidth: 300,
+    redactionToggles: {},
   }),
   actions: {
     setView(view) {
@@ -42,6 +43,17 @@ export const useUiStore = defineStore('ui', {
     },
     setDetailWidth(w) {
       this.detailWidth = Math.max(200, Math.min(400, w));
+    },
+    toggleRedaction(ruleId) {
+      this.redactionToggles[ruleId] = !this.redactionToggles[ruleId];
+    },
+    resetRedactions() {
+      this.redactionToggles = {};
+    },
+    selectAllRedactions(ruleIds) {
+      const obj = {};
+      for (const id of ruleIds) obj[id] = true;
+      this.redactionToggles = obj;
     },
   },
 });
