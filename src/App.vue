@@ -53,7 +53,6 @@ function onKeydown(e) {
 
 onMounted(async () => {
   document.addEventListener('keydown', onKeydown);
-  tabsStore.openWelcome();
   await Promise.all([sessionsStore.refresh(), tagsStore.refresh()]);
 });
 

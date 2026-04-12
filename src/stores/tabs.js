@@ -19,10 +19,10 @@ export const useTabsStore = defineStore('tabs', {
   },
   actions: {
     open(meta, isPreview) {
-      const path = meta.filePath;
+      const id = meta.id;
 
       // Already open? Activate it (and pin if requested).
-      const existingIdx = this.openTabs.findIndex(t => t.sessionPath === path);
+      const existingIdx = this.openTabs.findIndex(t => t.sessionPath === id);
       if (existingIdx >= 0) {
         if (!isPreview) this.openTabs[existingIdx].isPreview = false;
         this.activeTabIndex = existingIdx;
@@ -31,7 +31,7 @@ export const useTabsStore = defineStore('tabs', {
       }
 
       const newTab = {
-        sessionPath: path,
+        sessionPath: id,
         sessionMeta: meta,
         sessionData: null,
         isPreview,
@@ -141,9 +141,25 @@ export const useTabsStore = defineStore('tabs', {
       this.activeTabIndex = insertIdx;
     },
 
+    moveTab(fromIndex, toIndex) {
+      if (fromIndex === toIndex) return;
+      if (fromIndex < 0 || toIndex < 0) return;
+      if (fromIndex >= this.openTabs.length || toIndex >= this.openTabs.length) return;
+      const [tab] = this.openTabs.splice(fromIndex, 1);
+      this.openTabs.splice(toIndex, 0, tab);
+      // Keep active tab tracking correct
+      if (this.activeTabIndex === fromIndex) {
+        this.activeTabIndex = toIndex;
+      } else if (fromIndex < this.activeTabIndex && toIndex >= this.activeTabIndex) {
+        this.activeTabIndex--;
+      } else if (fromIndex > this.activeTabIndex && toIndex <= this.activeTabIndex) {
+        this.activeTabIndex++;
+      }
+    },
+
     async loadActive() {
       const tab = this.activeTab;
-      if (!tab || tab.sessionData) return;
+      if (!tab || tab.sessionData || tab.isWelcome) return;
 
       tab.loading = true;
       const session = await fetchSession(tab.sessionPath);

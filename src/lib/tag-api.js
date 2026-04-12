@@ -3,8 +3,7 @@
  */
 
 function apiUrl(path) {
-  const apiBase = new URLSearchParams(window.location.search).get('apiBase') || '';
-  return `${apiBase}${path}`;
+  return path;
 }
 
 export async function fetchTags() {
@@ -51,14 +50,14 @@ export async function deleteTag(id) {
   return await res.json();
 }
 
-export async function assignTag(tagId, sessionPath) {
+export async function assignTag(tagId, sessionId) {
   const url = apiUrl('/api/tags/assign');
   let res;
   try {
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tag_id: tagId, session_path: sessionPath }),
+      body: JSON.stringify({ tag_id: tagId, session_id: sessionId }),
     });
   } catch (e) {
     throw new Error(`Cannot reach backend at ${url}: ${e.message}`);
@@ -67,14 +66,14 @@ export async function assignTag(tagId, sessionPath) {
   return await res.json();
 }
 
-export async function unassignTag(tagId, sessionPath) {
+export async function unassignTag(tagId, sessionId) {
   const url = apiUrl('/api/tags/unassign');
   let res;
   try {
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tag_id: tagId, session_path: sessionPath }),
+      body: JSON.stringify({ tag_id: tagId, session_id: sessionId }),
     });
   } catch (e) {
     throw new Error(`Cannot reach backend at ${url}: ${e.message}`);

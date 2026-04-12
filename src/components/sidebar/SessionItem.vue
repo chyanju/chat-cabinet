@@ -1,6 +1,7 @@
 <template>
   <li class="session-item" :class="{ active }" @click="onClick" @dblclick="onDblClick">
     <div class="session-item-time">
+      <sl-icon v-if="!session.has_data" name="box-arrow-up-right" class="session-item-type-icon" title="Linked"></sl-icon>
       {{ timeStr }}
       <span class="session-item-badge" :style="badgeStyle">{{ srcLabel }}</span>
       <span v-if="session.archived" class="session-item-badge badge-archived">archived</span>
@@ -16,6 +17,8 @@ import { computed } from 'vue';
 import { formatTime } from '../../lib/format.js';
 import { SOURCE_LABELS, SOURCE_COLORS, getSourceKey } from '../../lib/sources.js';
 import { redact } from '../../lib/redact.js';
+
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 
 const props = defineProps({
   session: { type: Object, required: true },
@@ -78,6 +81,14 @@ function onDblClick() {
 .session-item-time {
   font-size: 12px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.session-item-type-icon {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 .session-item-cwd {
   font-size: 10px;

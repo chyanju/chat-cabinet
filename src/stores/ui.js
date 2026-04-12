@@ -4,7 +4,9 @@ export const useUiStore = defineStore('ui', {
   state: () => ({
     activeView: 'source',
     activeSourceFilters: new Set(),
+    activeModelFilters: new Set(),
     activeTagFilters: new Set(),
+    storageFilter: 'all', // 'all' | 'linked' | 'saved'
     searchQuery: '',
     detailCollapsed: false,
     detailWidth: 280,
@@ -26,6 +28,16 @@ export const useUiStore = defineStore('ui', {
     clearSourceFilters() {
       this.activeSourceFilters.clear();
     },
+    toggleModel(key) {
+      if (this.activeModelFilters.has(key)) {
+        this.activeModelFilters.delete(key);
+      } else {
+        this.activeModelFilters.add(key);
+      }
+    },
+    clearModelFilters() {
+      this.activeModelFilters.clear();
+    },
     toggleTag(id) {
       if (this.activeTagFilters.has(id)) {
         this.activeTagFilters.delete(id);
@@ -36,6 +48,9 @@ export const useUiStore = defineStore('ui', {
     clearTagFilters() {
       this.activeTagFilters.clear();
     },
+    setStorageFilter(val) {
+      this.storageFilter = val;
+    },
     toggleDetail() {
       this.detailCollapsed = !this.detailCollapsed;
     },
@@ -43,7 +58,7 @@ export const useUiStore = defineStore('ui', {
       this.sidebarWidth = Math.max(200, Math.min(450, w));
     },
     setDetailWidth(w) {
-      this.detailWidth = Math.max(200, Math.min(400, w));
+      this.detailWidth = Math.max(280, Math.min(400, w));
     },
     togglePrivacyPreset(ruleId) {
       this.privacyPresets[ruleId] = !this.privacyPresets[ruleId];

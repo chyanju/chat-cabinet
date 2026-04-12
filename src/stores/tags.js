@@ -8,9 +8,9 @@ export const useTagsStore = defineStore('tags', {
     error: null,
   }),
   getters: {
-    getTagsForSession: (state) => (sessionPath) => {
+    getTagsForSession: (state) => (sessionId) => {
       const tagIds = state.assignments
-        .filter(a => a.session_path === sessionPath)
+        .filter(a => a.session_id === sessionId)
         .map(a => a.tag_id);
       return state.tags.filter(t => tagIds.includes(t.id));
     },
@@ -42,12 +42,12 @@ export const useTagsStore = defineStore('tags', {
       await apiDeleteTag(id);
       await this.refresh();
     },
-    async assign(tagId, sessionPath) {
-      await apiAssignTag(tagId, sessionPath);
+    async assign(tagId, sessionId) {
+      await apiAssignTag(tagId, sessionId);
       await this.refresh();
     },
-    async unassign(tagId, sessionPath) {
-      await apiUnassignTag(tagId, sessionPath);
+    async unassign(tagId, sessionId) {
+      await apiUnassignTag(tagId, sessionId);
       await this.refresh();
     },
   },

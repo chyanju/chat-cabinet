@@ -31,20 +31,3 @@ export function importSessionFromFile(file) {
     reader.readAsText(file);
   });
 }
-
-export function triggerImport(tabsStore) {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return;
-    const result = await importSessionFromFile(file);
-    if (result.error) {
-      alert(`Import failed: ${result.error}`);
-    } else {
-      tabsStore.openImported(result.data);
-    }
-  };
-  input.click();
-}

@@ -6,6 +6,7 @@
       <span class="statusbar-item">{{ tabsStore.openTabs.length }} tab{{ tabsStore.openTabs.length !== 1 ? 's' : '' }} open</span>
     </div>
     <div class="statusbar-right">
+      <span v-if="storageLabel" class="statusbar-item" :class="storageClass">{{ storageLabel }}</span>
       <span v-if="sourceLabel" class="statusbar-item">{{ sourceLabel }}</span>
       <span v-if="modelLabel" class="statusbar-item">{{ modelLabel }}</span>
     </div>
@@ -27,6 +28,18 @@ const sourceLabel = computed(() => {
   const meta = tabsStore.activeMeta;
   if (!meta) return '';
   return SOURCE_LABELS[meta.source_key] || meta.source_key || '';
+});
+
+const storageLabel = computed(() => {
+  const meta = tabsStore.activeMeta;
+  if (!meta || meta.id?.startsWith('welcome-') || meta.id?.startsWith('import-')) return '';
+  return meta.has_data ? 'Saved' : 'Linked';
+});
+
+const storageClass = computed(() => {
+  const meta = tabsStore.activeMeta;
+  if (!meta) return '';
+  return meta.has_data ? 'storage-saved' : 'storage-linked';
 });
 
 const modelLabel = computed(() => {
@@ -63,5 +76,11 @@ const modelLabel = computed(() => {
   align-items: center;
   gap: 4px;
   white-space: nowrap;
+}
+.storage-linked {
+  color: var(--text-muted);
+}
+.storage-saved {
+  color: var(--accent);
 }
 </style>

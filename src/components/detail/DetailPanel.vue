@@ -23,12 +23,18 @@ function startResize(e) {
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
 
-  const onMove = (e) => {
-    const appEl = document.getElementById('app-root') || document.getElementById('app');
-    if (!appEl) return;
-    const appRect = appEl.getBoundingClientRect();
-    const newWidth = appRect.right - e.clientX;
-    uiStore.setDetailWidth(newWidth);
+  const appEl = document.getElementById('app-root') || document.getElementById('app');
+  if (!appEl) return;
+  const appRight = appEl.getBoundingClientRect().right;
+  let lastWidth = uiStore.detailWidth;
+
+  const onMove = (ev) => {
+    const raw = appRight - ev.clientX;
+    const clamped = Math.max(280, Math.min(400, raw));
+    if (clamped === lastWidth) return;
+    lastWidth = clamped;
+    // Direct DOM update — bypasses Vue reactivity for smooth dragging
+    appEl.style.setProperty('--detail-panel-w', clamped + 'px');
   };
 
   const onUp = () => {
@@ -36,6 +42,8 @@ function startResize(e) {
     document.body.style.userSelect = '';
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
+    // Commit final value to Pinia (single reactive update)
+    uiStore.setDetailWidth(lastWidth);
   };
 
   document.addEventListener('mousemove', onMove);
@@ -51,6 +59,7 @@ function startResize(e) {
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  min-width: 280px;
 }
 .dp-resize-handle {
   position: absolute;

@@ -1,7 +1,8 @@
 <template>
   <div
     class="tab-item"
-    :class="{ active, preview: tab.isPreview }"
+    :class="{ active, preview: tab.isPreview, 'drag-over-left': isDragOver, 'drag-over-right': isDragOverRight }"
+    @mousedown="emit('dragstart', $event, index)"
     @click="emit('activate')"
     @dblclick="emit('pin')"
     @auxclick.middle.prevent="emit('close')"
@@ -21,9 +22,12 @@ import { SOURCE_ICONS, SOURCE_COLORS, getSourceKey } from '../../lib/sources.js'
 const props = defineProps({
   tab: { type: Object, required: true },
   active: { type: Boolean, default: false },
+  index: { type: Number, required: true },
+  isDragOver: { type: Boolean, default: false },
+  isDragOverRight: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['activate', 'close', 'pin']);
+const emit = defineEmits(['activate', 'close', 'pin', 'dragstart']);
 
 const meta = computed(() => props.tab.sessionMeta || {});
 const srcKey = computed(() => getSourceKey(meta.value));
@@ -62,6 +66,12 @@ const label = computed(() => {
 }
 .tab-item.preview .tab-label {
   font-style: italic;
+}
+.tab-item.drag-over-left {
+  border-left: 2px solid var(--accent);
+}
+.tab-item.drag-over-right {
+  border-right: 2px solid var(--accent);
 }
 .tab-icon {
   display: flex;

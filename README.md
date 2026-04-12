@@ -6,6 +6,7 @@ A local viewer for browsing AI coding assistant session logs from Codex CLI, VS 
 
 - Automatically discovers local session logs from supported tools
 - Lets you search, filter, tag, and inspect conversations in one UI
+- **Save / Link** — save session snapshots to a local SQLite database, or keep them linked to live source files
 - **Privacy Mode** — redact sensitive info (file paths, emails, API keys, IPs, etc.) with configurable presets
 - **Export** — export sessions to Markdown, plain text, or Cabinet JSON with selectable fields
 - Supports both desktop GUI mode and browser/headless mode
@@ -62,7 +63,7 @@ Open `http://localhost:5173`
 
 - Tauri 2 desktop shell
 - Vue 3 + Pinia + Vite frontend
-- Node.js backend
+- Node.js backend with SQLite (better-sqlite3)
 
 ## Project Layout
 

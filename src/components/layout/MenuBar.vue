@@ -115,6 +115,25 @@
       </button>
     </div>
   </div>
+
+  <!-- About Modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="showAbout" class="about-overlay" @click.self="showAbout = false">
+        <div class="about-modal">
+          <div class="about-header">
+            <img src="/logo.png" alt="" class="about-logo">
+            <span class="about-title">Chat Cabinet</span>
+          </div>
+          <div class="about-version">v0.3.0</div>
+          <p class="about-desc">A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, and Cursor.</p>
+          <div class="about-footer">
+            <button class="about-close-btn" @click="showAbout = false">Close</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -209,10 +228,12 @@ function onFileSelect(e) {
   }
 }
 
+const showAbout = ref(false);
+
 function onHelpSelect(e) {
   const val = e.detail.item.value;
   if (val === 'github') window.open('https://github.com/chyanju/chat-cabinet', '_blank');
-  else if (val === 'about') alert('Chat Cabinet v0.2.0\nA local viewer for AI coding assistant session logs.');
+  else if (val === 'about') showAbout.value = true;
 }
 </script>
 
@@ -383,6 +404,11 @@ function onHelpSelect(e) {
   color: var(--text);
 }
 
+/* Privacy popover */
+.privacy-popover {
+  width: 280px;
+}
+
 /* Export popover */
 .export-popover {
   width: 260px;
@@ -464,5 +490,70 @@ sl-menu-item::part(base):hover {
 }
 sl-divider {
   --color: var(--border);
+}
+
+/* About Modal */
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.about-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  padding: 24px 28px;
+  width: 320px;
+  text-align: center;
+}
+.about-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.about-logo {
+  width: 28px;
+  height: 28px;
+}
+.about-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.about-version {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.about-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.about-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.about-close-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 5px 20px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.about-close-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-muted);
 }
 </style>

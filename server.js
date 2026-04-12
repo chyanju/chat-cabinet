@@ -1,9 +1,9 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { listAllSessions, loadSession } = require('./server/sessions');
+const { initDb, closeDb } = require('./server/db');
+const { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession } = require('./server/sessions');
 const { listTags, createTag, deleteTag, assignTag, unassignTag, updateTag } = require('./server/tags');
-const { ensureCabinetDir } = require('./server/storage');
 
 const DEFAULT_PORT = 3456;
 
@@ -53,16 +53,78 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/session' && method === 'GET') {
-    const fp = url.searchParams.get('path');
-    if (!fp) {
-      jsonResponse(res, 400, { error: 'Missing path parameter' });
+    const id = url.searchParams.get('id');
+    if (!id) {
+      jsonResponse(res, 400, { error: 'Missing id parameter' });
       return;
     }
     try {
-      const allSessions = listAllSessions();
-      const meta = allSessions.find(s => s.filePath === fp) || null;
-      const session = loadSession(fp, meta);
+      const session = loadSession(id);
       jsonResponse(res, 200, session);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/sync' && method === 'POST') {
+    try {
+      const result = syncSessions();
+      jsonResponse(res, 200, result);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/session/save' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const result = saveSession(body.id);
+      jsonResponse(res, 200, result);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/session/unsave' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const result = unsaveSession(body.id);
+      jsonResponse(res, 200, result);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/session/pull' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const result = pullSession(body.id);
+      jsonResponse(res, 200, result);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/session/reveal' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const { getDb } = require('./server/db');
+      const row = getDb().prepare('SELECT source_path FROM sessions WHERE id = ?').get(body.id);
+      if (!row || !row.source_path) {
+        jsonResponse(res, 400, { error: 'No source path for this session' });
+        return;
+      }
+      const dir = path.dirname(row.source_path);
+      const { spawn } = require('child_process');
+      if (process.platform === 'darwin') spawn('open', [dir]);
+      else if (process.platform === 'win32') spawn('explorer', [dir]);
+      else spawn('xdg-open', [dir]);
+      jsonResponse(res, 200, { ok: true, dir });
     } catch (e) {
       jsonResponse(res, 400, { error: e.message });
     }
@@ -112,7 +174,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/tags/assign' && method === 'POST') {
     try {
       const body = await parseBody(req);
-      assignTag(body.tag_id, body.session_path);
+      assignTag(body.tag_id, body.session_id);
       jsonResponse(res, 200, { ok: true });
     } catch (e) {
       jsonResponse(res, 400, { error: e.message });
@@ -123,7 +185,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/tags/unassign' && method === 'POST') {
     try {
       const body = await parseBody(req);
-      unassignTag(body.tag_id, body.session_path);
+      unassignTag(body.tag_id, body.session_id);
       jsonResponse(res, 200, { ok: true });
     } catch (e) {
       jsonResponse(res, 400, { error: e.message });
@@ -169,7 +231,14 @@ const server = http.createServer(async (req, res) => {
  */
 function startServer(opts = {}) {
   const port = opts.port ?? DEFAULT_PORT;
-  ensureCabinetDir();
+  initDb();
+  try {
+    console.log('Syncing sessions...');
+    const syncResult = syncSessions();
+    console.log(`Sync complete: ${syncResult.added} added, ${syncResult.removed} removed, ${syncResult.updated} updated`);
+  } catch (e) {
+    console.error('Sync failed (continuing with existing data):', e.message);
+  }
   return new Promise((resolve, reject) => {
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {

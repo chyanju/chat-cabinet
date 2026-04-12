@@ -1,49 +1,58 @@
 <template>
-  <div class="tag-filter">
+  <div class="model-filter">
     <div class="filter-header" @click="collapsed = !collapsed">
-      <span class="filter-label">Tags</span>
-      <span class="filter-active-count" v-if="collapsed && uiStore.activeTagFilters.size > 0">
-        {{ uiStore.activeTagFilters.size }} active
+      <span class="filter-label">Models</span>
+      <span class="filter-active-count" v-if="collapsed && uiStore.activeModelFilters.size > 0">
+        {{ uiStore.activeModelFilters.size }} active
       </span>
       <svg class="filter-chevron" :class="{ collapsed }" viewBox="0 0 12 12" width="12" height="12">
         <path d="M2 4 L6 8 L10 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
     <div v-show="!collapsed" class="filter-chips">
-      <template v-if="tagsStore.tags.length > 0">
-        <button
-          v-for="tag in tagsStore.tags"
-          :key="tag.id"
-          class="filter-chip"
-          :class="{ active: uiStore.activeTagFilters.has(tag.id) }"
-          @click="uiStore.toggleTag(tag.id)"
-        >
-          <span class="chip-dot" :style="{ background: tag.color }"></span>
-          {{ tag.name }} ({{ getCount(tag.id) }})
-        </button>
-      </template>
-      <span v-else class="filter-empty">No tags yet</span>
+      <button
+        class="filter-chip"
+        :class="{ active: uiStore.activeModelFilters.size === 0 }"
+        @click="uiStore.clearModelFilters()"
+      >
+        All ({{ sessionsStore.sessions.length }})
+      </button>
+      <button
+        v-for="[model, count] in modelCounts"
+        :key="model"
+        class="filter-chip"
+        :class="{ active: uiStore.activeModelFilters.has(model) }"
+        @click="uiStore.toggleModel(model)"
+      >
+        {{ model }} ({{ count }})
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useUiStore } from '../../stores/ui.js';
-import { useTagsStore } from '../../stores/tags.js';
+import { useSessionsStore } from '../../stores/sessions.js';
 
 const uiStore = useUiStore();
-const tagsStore = useTagsStore();
-const collapsed = ref(false);
+const sessionsStore = useSessionsStore();
+const collapsed = ref(true);
 
-function getCount(tagId) {
-  return tagsStore.assignments.filter(a => a.tag_id === tagId).length;
-}
+const modelCounts = computed(() => {
+  const map = new Map();
+  for (const s of sessionsStore.sessions) {
+    const model = s.model_provider || 'unknown';
+    map.set(model, (map.get(model) || 0) + 1);
+  }
+  // Sort by count descending
+  return [...map.entries()].sort((a, b) => b[1] - a[1]);
+});
 </script>
 
 <style scoped>
-.tag-filter {
-  padding: 2px 10px 4px;
+.model-filter {
+  padding: 6px 10px 4px;
 }
 .filter-header {
   display: flex;
@@ -108,28 +117,17 @@ function getCount(tagId) {
   font-size: 10px;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.12s;
   white-space: nowrap;
 }
 .filter-chip:hover {
-  background: var(--surface-hover);
-  color: var(--text);
   border-color: var(--text-muted);
+  color: var(--text);
 }
 .filter-chip.active {
-  background: var(--accent-dim);
+  background: var(--accent-dim, rgba(56, 139, 253, 0.15));
   border-color: var(--accent);
   color: var(--accent);
-}
-.chip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.filter-empty {
-  font-size: 10px;
-  color: var(--text-muted);
-  padding: 2px 0;
+  font-weight: 600;
 }
 </style>

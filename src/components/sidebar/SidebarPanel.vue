@@ -22,7 +22,9 @@
     </div>
 
     <template v-if="uiStore.activeView === 'source'">
+      <StorageChips />
       <SourceChips />
+      <ModelChips />
       <TagChips />
       <div class="filter-count" v-if="showCount">
         {{ sessionsStore.filteredSessions.length }} of {{ sessionsStore.sessions.length }} sessions
@@ -45,9 +47,9 @@
       <ul class="session-list">
         <SessionItem
           v-for="s in sessionsStore.filteredSessions"
-          :key="s.filePath"
+          :key="s.id"
           :session="s"
-          :active="s.filePath === currentPath"
+          :active="s.id === currentPath"
           @select="tabsStore.open(s, true)"
           @pin="tabsStore.open(s, false)"
         />
@@ -66,7 +68,9 @@ import { useUiStore } from '../../stores/ui.js';
 import { useSessionsStore } from '../../stores/sessions.js';
 import { useTabsStore } from '../../stores/tabs.js';
 import { useTagsStore } from '../../stores/tags.js';
+import StorageChips from './StorageChips.vue';
 import SourceChips from './SourceChips.vue';
+import ModelChips from './ModelChips.vue';
 import TagChips from './TagChips.vue';
 import SessionItem from './SessionItem.vue';
 import TagView from './TagView.vue';
@@ -85,7 +89,9 @@ const currentPath = computed(() => tabsStore.activeTab?.sessionPath || null);
 const showCount = computed(() =>
   uiStore.searchQuery ||
   uiStore.activeSourceFilters.size > 0 ||
-  uiStore.activeTagFilters.size > 0
+  uiStore.activeModelFilters.size > 0 ||
+  uiStore.activeTagFilters.size > 0 ||
+  uiStore.storageFilter !== 'all'
 );
 
 async function onRefresh() {
@@ -98,16 +104,18 @@ function startResize(e) {
   document.body.style.userSelect = 'none';
 
   const appEl = document.getElementById('app-root');
+  if (!appEl) return;
+  const activityEl = appEl.querySelector('.activity-bar');
+  const activityRight = activityEl ? activityEl.getBoundingClientRect().right : appEl.getBoundingClientRect().left + 40;
+  let lastWidth = uiStore.sidebarWidth;
 
   const onMove = (ev) => {
-    if (!appEl) return;
-    const appRect = appEl.getBoundingClientRect();
-    // Sidebar is left-anchored, after the activity bar (~40px).
-    // Get the activity bar's actual right edge for accuracy.
-    const activityEl = appEl.querySelector('.activity-bar');
-    const activityRight = activityEl ? activityEl.getBoundingClientRect().right : appRect.left + 40;
-    const newWidth = ev.clientX - activityRight;
-    uiStore.setSidebarWidth(newWidth);
+    const raw = ev.clientX - activityRight;
+    const clamped = Math.max(200, Math.min(450, raw));
+    if (clamped === lastWidth) return;
+    lastWidth = clamped;
+    // Direct DOM update — bypasses Vue reactivity for smooth dragging
+    appEl.style.setProperty('--sidebar-w', clamped + 'px');
   };
 
   const onUp = () => {
@@ -115,6 +123,8 @@ function startResize(e) {
     document.body.style.userSelect = '';
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
+    // Commit final value to Pinia (single reactive update)
+    uiStore.setSidebarWidth(lastWidth);
   };
 
   document.addEventListener('mousemove', onMove);

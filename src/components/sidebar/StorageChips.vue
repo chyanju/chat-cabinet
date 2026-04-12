@@ -1,49 +1,56 @@
 <template>
-  <div class="tag-filter">
+  <div class="storage-filter">
     <div class="filter-header" @click="collapsed = !collapsed">
-      <span class="filter-label">Tags</span>
-      <span class="filter-active-count" v-if="collapsed && uiStore.activeTagFilters.size > 0">
-        {{ uiStore.activeTagFilters.size }} active
+      <span class="filter-label">Storage</span>
+      <span class="filter-active-count" v-if="collapsed && uiStore.storageFilter !== 'all'">
+        1 active
       </span>
       <svg class="filter-chevron" :class="{ collapsed }" viewBox="0 0 12 12" width="12" height="12">
         <path d="M2 4 L6 8 L10 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
     <div v-show="!collapsed" class="filter-chips">
-      <template v-if="tagsStore.tags.length > 0">
-        <button
-          v-for="tag in tagsStore.tags"
-          :key="tag.id"
-          class="filter-chip"
-          :class="{ active: uiStore.activeTagFilters.has(tag.id) }"
-          @click="uiStore.toggleTag(tag.id)"
-        >
-          <span class="chip-dot" :style="{ background: tag.color }"></span>
-          {{ tag.name }} ({{ getCount(tag.id) }})
-        </button>
-      </template>
-      <span v-else class="filter-empty">No tags yet</span>
+      <button
+        class="filter-chip"
+        :class="{ active: uiStore.storageFilter === 'all' }"
+        @click="uiStore.setStorageFilter('all')"
+      >
+        All ({{ sessionsStore.sessions.length }})
+      </button>
+      <button
+        class="filter-chip"
+        :class="{ active: uiStore.storageFilter === 'linked' }"
+        @click="uiStore.setStorageFilter('linked')"
+      >
+        Linked ({{ linkedCount }})
+      </button>
+      <button
+        class="filter-chip"
+        :class="{ active: uiStore.storageFilter === 'saved' }"
+        @click="uiStore.setStorageFilter('saved')"
+      >
+        Saved ({{ savedCount }})
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useUiStore } from '../../stores/ui.js';
-import { useTagsStore } from '../../stores/tags.js';
+import { useSessionsStore } from '../../stores/sessions.js';
 
 const uiStore = useUiStore();
-const tagsStore = useTagsStore();
+const sessionsStore = useSessionsStore();
 const collapsed = ref(false);
 
-function getCount(tagId) {
-  return tagsStore.assignments.filter(a => a.tag_id === tagId).length;
-}
+const linkedCount = computed(() => sessionsStore.sessions.filter(s => !s.has_data).length);
+const savedCount = computed(() => sessionsStore.sessions.filter(s => !!s.has_data).length);
 </script>
 
 <style scoped>
-.tag-filter {
-  padding: 2px 10px 4px;
+.storage-filter {
+  padding: 6px 10px 4px;
 }
 .filter-header {
   display: flex;
@@ -77,21 +84,6 @@ function getCount(tagId) {
   transform: rotate(-90deg);
 }
 .filter-chips {
-  max-height: 72px;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-.filter-chips::-webkit-scrollbar {
-  width: 6px;
-}
-.filter-chips::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-.filter-chips::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-.filter-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
@@ -120,16 +112,5 @@ function getCount(tagId) {
   background: var(--accent-dim);
   border-color: var(--accent);
   color: var(--accent);
-}
-.chip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.filter-empty {
-  font-size: 10px;
-  color: var(--text-muted);
-  padding: 2px 0;
 }
 </style>

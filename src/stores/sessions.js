@@ -27,15 +27,27 @@ export const useSessionsStore = defineStore('sessions', {
         list = list.filter(s => ui.activeSourceFilters.has(getSourceKey(s)));
       }
 
+      // Model filter
+      if (ui.activeModelFilters.size > 0) {
+        list = list.filter(s => ui.activeModelFilters.has(s.model_provider || 'unknown'));
+      }
+
+      // Storage filter
+      if (ui.storageFilter === 'linked') {
+        list = list.filter(s => !s.has_data);
+      } else if (ui.storageFilter === 'saved') {
+        list = list.filter(s => !!s.has_data);
+      }
+
       // Tag filter
       if (ui.activeTagFilters.size > 0) {
         const tagsStore = useTagsStore();
-        const taggedPaths = new Set(
+        const taggedIds = new Set(
           tagsStore.assignments
             .filter(a => ui.activeTagFilters.has(a.tag_id))
-            .map(a => a.session_path)
+            .map(a => a.session_id)
         );
-        list = list.filter(s => taggedPaths.has(s.filePath));
+        list = list.filter(s => taggedIds.has(s.id));
       }
 
       return list;

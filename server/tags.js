@@ -1,58 +1,53 @@
 /**
- * Tag CRUD logic backed by ~/.cabinet/tags.json.
+ * Tag CRUD logic backed by SQLite (cabinet.db).
  */
 const crypto = require('crypto');
-const { readTagsFile, writeTagsFile } = require('./storage');
+const { getDb } = require('./db');
 
 function listTags() {
-  return readTagsFile();
+  const db = getDb();
+  const tags = db.prepare('SELECT * FROM tags ORDER BY created_at').all();
+  const assignments = db.prepare('SELECT * FROM tag_assignments').all();
+  return { tags, assignments };
 }
 
 function createTag(name, color) {
-  const data = readTagsFile();
+  const db = getDb();
   const tag = {
     id: crypto.randomUUID(),
     name: name.trim(),
     color: color || '#58a6ff',
     created_at: new Date().toISOString(),
   };
-  data.tags.push(tag);
-  writeTagsFile(data);
+  db.prepare('INSERT INTO tags (id, name, color, created_at) VALUES (?, ?, ?, ?)').run(
+    tag.id, tag.name, tag.color, tag.created_at,
+  );
   return tag;
 }
 
 function deleteTag(id) {
-  const data = readTagsFile();
-  data.tags = data.tags.filter(t => t.id !== id);
-  data.assignments = data.assignments.filter(a => a.tag_id !== id);
-  writeTagsFile(data);
+  const db = getDb();
+  db.prepare('DELETE FROM tags WHERE id = ?').run(id);
 }
 
-function assignTag(tagId, sessionPath) {
-  const data = readTagsFile();
-  const exists = data.assignments.some(a => a.tag_id === tagId && a.session_path === sessionPath);
-  if (!exists) {
-    data.assignments.push({ tag_id: tagId, session_path: sessionPath });
-    writeTagsFile(data);
-  }
+function assignTag(tagId, sessionId) {
+  const db = getDb();
+  db.prepare('INSERT OR IGNORE INTO tag_assignments (tag_id, session_id) VALUES (?, ?)').run(tagId, sessionId);
 }
 
-function unassignTag(tagId, sessionPath) {
-  const data = readTagsFile();
-  data.assignments = data.assignments.filter(
-    a => !(a.tag_id === tagId && a.session_path === sessionPath)
-  );
-  writeTagsFile(data);
+function unassignTag(tagId, sessionId) {
+  const db = getDb();
+  db.prepare('DELETE FROM tag_assignments WHERE tag_id = ? AND session_id = ?').run(tagId, sessionId);
 }
 
 function updateTag(id, updates) {
-  const data = readTagsFile();
-  const tag = data.tags.find(t => t.id === id);
+  const db = getDb();
+  const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(id);
   if (!tag) return null;
-  if (updates.name !== undefined) tag.name = updates.name.trim();
-  if (updates.color !== undefined) tag.color = updates.color;
-  writeTagsFile(data);
-  return tag;
+  const name = updates.name !== undefined ? updates.name.trim() : tag.name;
+  const color = updates.color !== undefined ? updates.color : tag.color;
+  db.prepare('UPDATE tags SET name = ?, color = ? WHERE id = ?').run(name, color, id);
+  return { ...tag, name, color };
 }
 
 module.exports = { listTags, createTag, deleteTag, assignTag, unassignTag, updateTag };
