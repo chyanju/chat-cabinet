@@ -81,57 +81,21 @@ export const useTabsStore = defineStore('tabs', {
       this.activeTabIndex = index;
     },
 
-    openImported(sessionData) {
-      const id = `import-${Date.now()}`;
+    /** Open a file dropped onto the window as a view-only tab (no DB persistence). */
+    openViewed(sessionData) {
+      const id = `view-${Date.now()}`;
       const meta = {
         filePath: id,
         id: sessionData.session_id || id,
         timestamp: sessionData.created_at || null,
-        source: sessionData.source?.tool || 'import',
-        title: sessionData.title || 'Imported Session',
+        source: sessionData.source?.tool || 'view',
+        title: sessionData.title || 'Viewed Session',
       };
       const newTab = {
         sessionPath: id,
         sessionMeta: meta,
         sessionData,
         isPreview: false,
-        isWelcome: false,
-        scrollPos: 0,
-        loading: false,
-        error: null,
-      };
-      const insertIdx = this.activeTabIndex >= 0 ? this.activeTabIndex + 1 : this.openTabs.length;
-      this.openTabs.splice(insertIdx, 0, newTab);
-      this.activeTabIndex = insertIdx;
-    },
-
-    /** Replace the current active welcome tab in-place with imported session data */
-    replaceActiveWithImported(sessionData) {
-      const tab = this.activeTab;
-      if (!tab) return;
-      const id = `import-${Date.now()}`;
-      tab.sessionPath = id;
-      tab.sessionMeta = {
-        filePath: id,
-        id: sessionData.session_id || id,
-        timestamp: sessionData.created_at || null,
-        source: sessionData.source?.tool || 'import',
-        title: sessionData.title || 'Imported Session',
-      };
-      tab.sessionData = sessionData;
-      tab.isWelcome = false;
-      tab.loading = false;
-      tab.error = null;
-    },
-
-    openWelcome() {
-      const id = `welcome-${Date.now()}`;
-      const newTab = {
-        sessionPath: id,
-        sessionMeta: { filePath: id, id, title: 'New Tab' },
-        sessionData: null,
-        isPreview: false,
-        isWelcome: true,
         scrollPos: 0,
         loading: false,
         error: null,
@@ -159,7 +123,7 @@ export const useTabsStore = defineStore('tabs', {
 
     async loadActive() {
       const tab = this.activeTab;
-      if (!tab || tab.sessionData || tab.isWelcome) return;
+      if (!tab || tab.sessionData) return;
 
       tab.loading = true;
       const session = await fetchSession(tab.sessionPath);

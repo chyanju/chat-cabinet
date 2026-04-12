@@ -1,5 +1,5 @@
 <template>
-  <div v-if="tabsStore.activeTab && !tabsStore.activeTab.isWelcome" class="dp-section dp-tags">
+  <div v-if="tabsStore.activeTab" class="dp-section dp-tags">
     <div class="dp-section-header">
       <span class="dp-section-title">Tags</span>
       <sl-icon-button v-if="!showInput" name="plus-lg" label="Add tag" class="dp-tag-add-btn" @click="showInput = true" />

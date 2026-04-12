@@ -9,9 +9,9 @@
       <div slot="trigger" class="menubar-item" :class="{ open: openMenu === 'file' }"
            @mouseenter="onHover('file')">File</div>
       <sl-menu @sl-select="onFileSelect">
-        <sl-menu-item value="new-tab">
-          New Tab
-          <span slot="suffix" class="menubar-shortcut">Ctrl+N</span>
+        <sl-menu-item value="open-file">
+          Open Session from File
+          <span slot="suffix" class="menubar-shortcut">Ctrl+O</span>
         </sl-menu-item>
         <sl-divider></sl-divider>
         <sl-menu-item value="close-tab">
@@ -142,6 +142,7 @@ import { useUiStore } from '../../stores/ui.js';
 import { useTabsStore } from '../../stores/tabs.js';
 import { REDACTION_RULES } from '../../lib/redact.js';
 import { entriesToText, downloadFile, sessionToJson } from '../../lib/export.js';
+import { importSessionFromFile } from '../../lib/import.js';
 
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import '@shoelace-style/shoelace/dist/components/menu/menu.js';
@@ -219,10 +220,27 @@ function onHover(which) {
   }
 }
 
+function browseForFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const result = await importSessionFromFile(file);
+    if (result.error) {
+      console.error('[open-file]', result.error);
+      return;
+    }
+    tabsStore.openViewed(result.data);
+  };
+  input.click();
+}
+
 function onFileSelect(e) {
   const val = e.detail.item.value;
-  if (val === 'new-tab') {
-    tabsStore.openWelcome();
+  if (val === 'open-file') {
+    browseForFile();
   } else if (val === 'close-tab') {
     if (tabsStore.activeTabIndex >= 0) tabsStore.close(tabsStore.activeTabIndex);
   }

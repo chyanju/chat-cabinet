@@ -16,7 +16,8 @@ impl Drop for ServerProcess {
 }
 
 /// Spawn `node server.js` and wait for the "running at" line to extract the port.
-fn spawn_node_server() -> Result<(Child, u16), String> {
+/// In dev mode, use fixed port 3456 so the Vite proxy can reach the backend.
+fn spawn_node_server(is_dev: bool) -> Result<(Child, u16), String> {
     let cwd = std::env::current_dir().map_err(|e| format!("Failed to get cwd: {e}"))?;
     let exe_dir = std::env::current_exe()
         .ok()
@@ -42,10 +43,11 @@ fn spawn_node_server() -> Result<(Child, u16), String> {
 
     let server_dir = server_js.parent().unwrap().to_path_buf();
 
+    let port_arg = if is_dev { "3456" } else { "0" };
     let mut child = Command::new("node")
         .arg(&server_js)
         .arg("--port")
-        .arg("0")
+        .arg(port_arg)
         .current_dir(&server_dir)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -75,9 +77,9 @@ pub fn run() {
     let headless = std::env::args().any(|a| a == "--headless");
     let is_dev = cfg!(debug_assertions);
 
-    let (mut child, port) = spawn_node_server().expect("Failed to start backend server");
+    let (mut child, port) = spawn_node_server(is_dev).expect("Failed to start backend server");
     let server_url = format!("http://localhost:{}", port);
-    let dev_url = format!("http://localhost:5173/?apiBase={}", urlencoding::encode(&server_url));
+    let dev_url = "http://localhost:5173".to_string();
 
     if headless {
         // CLI fallback: no GUI, just keep the Node server running until interrupted.

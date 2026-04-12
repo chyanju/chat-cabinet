@@ -15,19 +15,16 @@
         @pin="tabsStore.pin(i)"
         @dragstart="onTabDragStart"
       />
-      <button class="tab-new" title="New Tab" @click="tabsStore.openWelcome()">+</button>
     </div>
 
     <div class="editor-content" ref="editorContentEl">
       <!-- Placeholder when no tab is active -->
       <div v-if="!tabsStore.activeTab" class="placeholder">
         <div class="placeholder-icon">&#128193;</div>
-        <div>Select a session to view</div>
-        <button class="placeholder-import" @click="tabsStore.openWelcome()">or open a new tab to import</button>
+        <div>Select a session from the sidebar</div>
+        <div class="placeholder-hint">or drop a JSON file anywhere to view</div>
+        <button class="placeholder-browse" @click="browseForFile">Open Session from File</button>
       </div>
-
-      <!-- Welcome tab (drop zone) -->
-      <WelcomeTab v-else-if="tabsStore.activeTab.isWelcome" />
 
       <!-- Loading -->
       <div v-else-if="tabsStore.activeTab.loading" class="loading">
@@ -51,8 +48,8 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
+import { importSessionFromFile } from '../../lib/import.js';
 import TabItem from './TabItem.vue';
-import WelcomeTab from './WelcomeTab.vue';
 import ConversationView from '../conversation/ConversationView.vue';
 
 import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
@@ -60,6 +57,23 @@ import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 const tabsStore = useTabsStore();
 const editorContentEl = ref(null);
 const tabBarEl = ref(null);
+
+function browseForFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const result = await importSessionFromFile(file);
+    if (result.error) {
+      console.error('[open-file]', result.error);
+      return;
+    }
+    tabsStore.openViewed(result.data);
+  };
+  input.click();
+}
 
 // ── Tab drag-to-reorder (pointer events, VS Code-style) ──────
 const dragFromIndex = ref(-1);
@@ -224,23 +238,6 @@ watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {
 }
 .tab-bar::-webkit-scrollbar { height: 0; }
 
-.tab-new {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  min-width: 28px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 16px;
-  cursor: pointer;
-  transition: color 0.1s;
-}
-.tab-new:hover {
-  color: var(--text);
-}
-
 .editor-content {
   flex: 1;
   overflow-y: auto;
@@ -259,8 +256,14 @@ watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {
   margin-bottom: 12px;
   opacity: 0.5;
 }
-.placeholder-import {
-  margin-top: 12px;
+.placeholder-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+.placeholder-browse {
+  margin-top: 14px;
   background: none;
   border: 1px solid var(--border);
   color: var(--accent);
@@ -270,7 +273,7 @@ watch(() => tabsStore.activeTabIndex, (newIdx, oldIdx) => {
   font-size: 12px;
   transition: all 0.15s;
 }
-.placeholder-import:hover {
+.placeholder-browse:hover {
   background: var(--accent-dim);
   border-color: var(--accent);
 }

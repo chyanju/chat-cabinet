@@ -16,6 +16,7 @@ import { useUiStore } from './stores/ui.js';
 import { useSessionsStore } from './stores/sessions.js';
 import { useTabsStore } from './stores/tabs.js';
 import { useTagsStore } from './stores/tags.js';
+import { importSessionFromFile } from './lib/import.js';
 import MenuBar from './components/layout/MenuBar.vue';
 import ActivityBar from './components/layout/ActivityBar.vue';
 import StatusBar from './components/layout/StatusBar.vue';
@@ -29,10 +30,10 @@ const tabsStore = useTabsStore();
 const tagsStore = useTagsStore();
 
 function onKeydown(e) {
-  // Ctrl+N — new tab
-  if (e.ctrlKey && e.key === 'n') {
+  // Ctrl+O — open file
+  if (e.ctrlKey && e.key === 'o') {
     e.preventDefault();
-    tabsStore.openWelcome();
+    browseForFile();
   }
   // Ctrl+W — close tab
   if (e.ctrlKey && e.key === 'w') {
@@ -51,13 +52,51 @@ function onKeydown(e) {
   }
 }
 
+function browseForFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const result = await importSessionFromFile(file);
+    if (result.error) {
+      console.error('[open-file]', result.error);
+      return;
+    }
+    tabsStore.openViewed(result.data);
+  };
+  input.click();
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+}
+
+async function onDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer?.files?.[0];
+  if (!file || !file.name.endsWith('.json')) return;
+  const result = await importSessionFromFile(file);
+  if (result.error) {
+    console.error('[drop]', result.error);
+    return;
+  }
+  tabsStore.openViewed(result.data);
+}
+
 onMounted(async () => {
   document.addEventListener('keydown', onKeydown);
+  document.addEventListener('dragover', onDragOver);
+  document.addEventListener('drop', onDrop);
   await Promise.all([sessionsStore.refresh(), tagsStore.refresh()]);
 });
 
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown);
+  document.removeEventListener('dragover', onDragOver);
+  document.removeEventListener('drop', onDrop);
 });
 </script>
 

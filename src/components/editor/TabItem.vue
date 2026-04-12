@@ -7,8 +7,7 @@
     @dblclick="emit('pin')"
     @auxclick.middle.prevent="emit('close')"
   >
-    <span v-if="tab.isWelcome" class="tab-icon tab-icon-welcome">+</span>
-    <span v-else class="tab-icon" :style="{ color: iconColor }" v-html="iconSvg"></span>
+    <span class="tab-icon" :style="{ color: iconColor }" v-html="iconSvg"></span>
     <span class="tab-label" :title="tab.sessionMeta?.cwd || tab.sessionMeta?.id || ''">{{ label }}</span>
     <button class="tab-close" title="Close" @click.stop="emit('close')">&times;</button>
   </div>
