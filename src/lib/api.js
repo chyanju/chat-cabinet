@@ -43,6 +43,10 @@ export function pullSession(id) {
   return postJson('/api/session/pull', { id });
 }
 
+export function updateAlias(id, alias) {
+  return postJson('/api/session/alias', { id, alias });
+}
+
 export function revealFolder(id) {
   return postJson('/api/session/reveal', { id });
 }

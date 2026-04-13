@@ -169,7 +169,7 @@ function syncSessions() {
 function listAllSessions() {
   const db = getDb();
   const rows = db.prepare(`
-    SELECT id, source_path, source, format, title, timestamp, model, cwd,
+    SELECT id, source_path, source, format, title, alias, timestamp, model, cwd,
            (data IS NOT NULL) AS has_data, created_at, updated_at
     FROM sessions ORDER BY timestamp DESC
   `).all();
@@ -181,6 +181,7 @@ function listAllSessions() {
     source_key: r.source,
     format: r.format,
     title: r.title,
+    alias: r.alias || null,
     timestamp: r.timestamp,
     model_provider: r.model,
     cwd: r.cwd,
@@ -337,4 +338,17 @@ function pullSession(sessionId) {
   return { ok: true, id: sessionId };
 }
 
-module.exports = { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession };
+/**
+ * Update the alias (user-defined display name) for a session.
+ */
+function updateAlias(sessionId, alias) {
+  const db = getDb();
+  const row = db.prepare('SELECT id FROM sessions WHERE id = ?').get(sessionId);
+  if (!row) throw new Error('Session not found');
+  const value = (alias || '').trim() || null;
+  const now = new Date().toISOString();
+  db.prepare('UPDATE sessions SET alias = ?, updated_at = ? WHERE id = ?').run(value, now, sessionId);
+  return { ok: true, id: sessionId, alias: value };
+}
+
+module.exports = { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession, updateAlias };

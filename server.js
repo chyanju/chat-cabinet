@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { initDb, getDb, closeDb, isDev, getCabinetDir } = require('./server/db');
-const { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession } = require('./server/sessions');
+const { syncSessions, listAllSessions, loadSession, saveSession, unsaveSession, pullSession, updateAlias } = require('./server/sessions');
 const { listTags, createTag, deleteTag, assignTag, unassignTag, updateTag } = require('./server/tags');
 
 const DEFAULT_PORT = 3456;
@@ -135,6 +135,17 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await parseBody(req);
       const result = pullSession(body.id);
+      jsonResponse(res, 200, result);
+    } catch (e) {
+      jsonResponse(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/session/alias' && method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const result = updateAlias(body.id, body.alias);
       jsonResponse(res, 200, result);
     } catch (e) {
       jsonResponse(res, 400, { error: e.message });

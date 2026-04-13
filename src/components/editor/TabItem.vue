@@ -33,7 +33,7 @@ const srcKey = computed(() => getSourceKey(meta.value));
 const iconSvg = computed(() => SOURCE_ICONS[srcKey.value] || '');
 const iconColor = computed(() => SOURCE_COLORS[srcKey.value] || '');
 const label = computed(() => {
-  return meta.value.title || formatTabDate(meta.value.timestamp) || meta.value.id?.slice(0, 8) || 'Session';
+  return meta.value.alias || meta.value.title || formatTabDate(meta.value.timestamp) || meta.value.id?.slice(0, 8) || 'Session';
 });
 </script>
 

@@ -38,6 +38,7 @@ function initDb(opts = {}) {
       source      TEXT,
       format      TEXT,
       title       TEXT,
+      alias       TEXT,
       timestamp   TEXT,
       model       TEXT,
       cwd         TEXT,
@@ -63,6 +64,12 @@ function initDb(opts = {}) {
       PRIMARY KEY (tag_id, session_id)
     );
   `);
+
+  // Migration: add alias column to existing databases
+  const cols = db.pragma('table_info(sessions)').map(c => c.name);
+  if (!cols.includes('alias')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN alias TEXT');
+  }
 
   return db;
 }

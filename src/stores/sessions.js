@@ -17,7 +17,7 @@ export const useSessionsStore = defineStore('sessions', {
       if (ui.searchQuery) {
         const q = ui.searchQuery.toLowerCase();
         list = list.filter(s => {
-          const searchable = `${s.id} ${s.cwd || ''} ${s.timestamp || ''} ${s.model_provider || ''} ${s.source || ''} ${s.source_key || ''} ${s.title || ''}`.toLowerCase();
+          const searchable = `${s.id} ${s.cwd || ''} ${s.timestamp || ''} ${s.model_provider || ''} ${s.source || ''} ${s.source_key || ''} ${s.title || ''} ${s.alias || ''}`.toLowerCase();
           return searchable.includes(q);
         });
       }

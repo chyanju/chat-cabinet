@@ -2,6 +2,43 @@
   <div class="dp-section dp-metadata">
     <div v-if="!session" class="dp-empty">No session selected</div>
     <template v-else>
+      <div v-if="!isViewTab" class="dp-field dp-alias-field">
+        <span class="dp-field-label">
+          Alias
+          <sl-icon-button
+            v-if="meta?.alias"
+            name="x-circle"
+            label="Remove alias"
+            class="dp-alias-remove"
+            @click="removeAlias"
+          />
+        </span>
+        <!-- Edit mode -->
+        <div v-if="aliasEditing" class="dp-alias-row">
+          <input
+            ref="aliasInputEl"
+            class="dp-alias-input"
+            :value="aliasValue"
+            placeholder="Enter alias..."
+            @input="aliasValue = $event.target.value"
+            @keydown.enter="confirmAlias"
+            @keydown.escape="cancelAlias"
+          />
+          <button class="dp-alias-btn dp-alias-confirm" @click="confirmAlias" title="Confirm">
+            <sl-icon name="check-lg"></sl-icon>
+          </button>
+          <button class="dp-alias-btn dp-alias-cancel" @click="cancelAlias" title="Cancel">
+            <sl-icon name="x-lg"></sl-icon>
+          </button>
+        </div>
+        <!-- Display mode -->
+        <span
+          v-else
+          class="dp-alias-display"
+          :class="{ 'is-set': !!meta?.alias }"
+          @click="startAliasEdit"
+        >{{ meta?.alias || '(not set)' }}</span>
+      </div>
       <div v-if="title" class="dp-field">
         <span class="dp-field-label">Title</span>
         <span class="dp-field-value dp-field-title">{{ redact(title) }}</span>
@@ -77,15 +114,16 @@
 </template>
 
 <script setup>
-import { computed, ref, onUnmounted } from 'vue';
+import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
 import { useTabsStore } from '../../stores/tabs.js';
 import { useSessionsStore } from '../../stores/sessions.js';
 import { formatTime } from '../../lib/format.js';
 import { SOURCE_LABELS } from '../../lib/sources.js';
 import { redact } from '../../lib/redact.js';
-import { saveSession, unsaveSession, pullSession, fetchSession, revealFolder } from '../../lib/api.js';
+import { saveSession, unsaveSession, pullSession, fetchSession, revealFolder, updateAlias } from '../../lib/api.js';
 
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
 
@@ -117,6 +155,53 @@ const hasSourcePath = computed(() => !!meta.value?.source_path);
 const busy = ref(false);
 const pullSuccess = ref(false);
 let pullTimer = null;
+
+// Alias editing
+const aliasEditing = ref(false);
+const aliasValue = ref('');
+const aliasInputEl = ref(null);
+
+// Reset edit mode when switching sessions
+watch(() => meta.value?.id, () => { aliasEditing.value = false; });
+
+function startAliasEdit() {
+  aliasValue.value = meta.value?.alias || '';
+  aliasEditing.value = true;
+  nextTick(() => {
+    const el = aliasInputEl.value;
+    if (el) { el.focus(); el.select(); }
+  });
+}
+
+function cancelAlias() {
+  aliasEditing.value = false;
+}
+
+async function confirmAlias() {
+  const next = aliasValue.value.trim();
+  aliasEditing.value = false;
+  const current = meta.value?.alias || '';
+  if (next === current) return;
+  await applyAlias(next);
+}
+
+async function removeAlias() {
+  aliasEditing.value = false;
+  await applyAlias('');
+}
+
+async function applyAlias(value) {
+  if (!meta.value?.id) return;
+  try {
+    await updateAlias(meta.value.id, value);
+    const alias = value || null;
+    if (tabsStore.activeTab) tabsStore.activeTab.sessionMeta = { ...meta.value, alias };
+    const s = sessionsStore.sessions.find(s => s.id === meta.value.id);
+    if (s) s.alias = alias;
+  } catch (e) {
+    console.error('[alias]', e);
+  }
+}
 
 onUnmounted(() => { if (pullTimer) clearTimeout(pullTimer); });
 
@@ -197,6 +282,81 @@ function onOpenFolder() {
   margin-bottom: 8px;
 }
 .dp-field:last-child { margin-bottom: 0; }
+
+/* Alias field */
+.dp-alias-remove {
+  margin-left: 2px;
+}
+.dp-alias-remove::part(base) {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 0;
+}
+.dp-alias-remove::part(base):hover {
+  color: var(--red, #f85149);
+}
+
+.dp-alias-display {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: text;
+  transition: background 0.12s;
+}
+.dp-alias-display:hover {
+  background: var(--surface-hover);
+}
+.dp-alias-display.is-set {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.dp-alias-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dp-alias-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 3px 6px;
+  outline: none;
+}
+.dp-alias-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+.dp-alias-btn {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: all 0.12s;
+}
+.dp-alias-confirm:hover {
+  color: var(--green, #3fb950);
+  background: var(--green-dim, #3fb95015);
+}
+.dp-alias-cancel:hover {
+  color: var(--red, #f85149);
+  background: var(--red-dim, #f8514912);
+}
+
 .dp-field-label {
   font-size: 10px;
   font-weight: 600;

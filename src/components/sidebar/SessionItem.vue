@@ -6,7 +6,7 @@
       <span class="session-item-badge" :style="badgeStyle">{{ srcLabel }}</span>
       <span v-if="session.archived" class="session-item-badge badge-archived">archived</span>
     </div>
-    <div v-if="session.title" class="session-item-title">{{ redact(session.title) }}</div>
+    <div v-if="displayName" class="session-item-title" :class="{ 'is-alias': !!session.alias }">{{ redact(displayName) }}</div>
     <div class="session-item-cwd">{{ redact(shortCwd) }}</div>
     <div class="session-item-id">{{ session.id }}</div>
   </li>
@@ -34,6 +34,8 @@ const badgeStyle = computed(() => ({
   background: srcColor.value + '22',
   color: srcColor.value,
 }));
+
+const displayName = computed(() => props.session.alias || props.session.title || '');
 
 const timeStr = computed(() => {
   return props.session.timestamp ? formatTime(props.session.timestamp) : 'Unknown time';
@@ -107,6 +109,9 @@ function onDblClick() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.session-item-title.is-alias {
+  font-weight: 600;
 }
 .session-item-badge {
   display: inline-block;
