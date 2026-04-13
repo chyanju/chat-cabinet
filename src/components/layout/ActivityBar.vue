@@ -1,14 +1,27 @@
 <template>
   <div class="activity-bar">
-    <sl-tooltip v-for="view in VIEWS" :key="view.id" :content="view.label" placement="right">
-      <button
-        class="activity-btn"
-        :class="{ active: uiStore.activeView === view.id }"
-        :aria-label="view.label"
-        @click="uiStore.setView(view.id)"
-        v-html="view.icon"
-      />
-    </sl-tooltip>
+    <div class="activity-top">
+      <sl-tooltip v-for="view in TOP_VIEWS" :key="view.id" :content="view.label" placement="right">
+        <button
+          class="activity-btn"
+          :class="{ active: uiStore.activeView === view.id }"
+          :aria-label="view.label"
+          @click="uiStore.setView(view.id)"
+          v-html="view.icon"
+        />
+      </sl-tooltip>
+    </div>
+    <div class="activity-bottom">
+      <sl-tooltip v-for="view in BOTTOM_VIEWS" :key="view.id" :content="view.label" placement="right">
+        <button
+          class="activity-btn"
+          :class="{ active: uiStore.activeView === view.id }"
+          :aria-label="view.label"
+          @click="uiStore.setView(view.id)"
+          v-html="view.icon"
+        />
+      </sl-tooltip>
+    </div>
   </div>
 </template>
 
@@ -18,12 +31,17 @@ import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
 
 const uiStore = useUiStore();
 
-const VIEWS = [
+// Top group: cabinets (content views, stacked from top)
+const TOP_VIEWS = [
   {
     id: 'source',
     label: 'Local Cabinet',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>`,
   },
+];
+
+// Bottom group: settings/management (stacked from bottom)
+const BOTTOM_VIEWS = [
   {
     id: 'tag',
     label: 'Tag Management',
@@ -40,8 +58,20 @@ const VIEWS = [
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 8px;
+  justify-content: space-between;
+}
+.activity-top,
+.activity-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 2px;
+}
+.activity-top {
+  padding-top: 8px;
+}
+.activity-bottom {
+  padding-bottom: 8px;
 }
 
 .activity-btn {

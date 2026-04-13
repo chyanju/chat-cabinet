@@ -3,7 +3,12 @@ const path = require('path');
 const os = require('os');
 const { decodeProjectDir } = require('../utils');
 
-const CLAUDE_PROJECTS_DIR = path.join(os.homedir(), '.claude', 'projects');
+// macOS/Linux: ~/.claude/projects  |  Windows: %APPDATA%\Claude\projects
+// macOS/Linux: ~/.claude/projects  |  Windows: %APPDATA%\Claude\projects
+const CLAUDE_PROJECTS_DIRS = [
+  path.join(os.homedir(), '.claude', 'projects'),
+  ...(process.env.APPDATA ? [path.join(process.env.APPDATA, 'Claude', 'projects')] : []),
+];
 
 function parseClaudeCodeSession(filePath, projectDir) {
   try {
@@ -66,22 +71,22 @@ function parseClaudeCodeSession(filePath, projectDir) {
 
 function discoverClaudeSessions() {
   const sessions = [];
-  if (!fs.existsSync(CLAUDE_PROJECTS_DIR)) return sessions;
-
-  try {
-    for (const projectDir of fs.readdirSync(CLAUDE_PROJECTS_DIR)) {
-      const projectPath = path.join(CLAUDE_PROJECTS_DIR, projectDir);
-      if (!fs.statSync(projectPath).isDirectory()) continue;
-      for (const sessionFile of fs.readdirSync(projectPath)) {
-        if (!sessionFile.endsWith('.jsonl')) continue;
-        const fp = path.join(projectPath, sessionFile);
-        const meta = parseClaudeCodeSession(fp, projectDir);
-        if (meta) sessions.push(meta);
+  for (const dir of CLAUDE_PROJECTS_DIRS) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      for (const projectDir of fs.readdirSync(dir)) {
+        const projectPath = path.join(dir, projectDir);
+        if (!fs.statSync(projectPath).isDirectory()) continue;
+        for (const sessionFile of fs.readdirSync(projectPath)) {
+          if (!sessionFile.endsWith('.jsonl')) continue;
+          const fp = path.join(projectPath, sessionFile);
+          const meta = parseClaudeCodeSession(fp, projectDir);
+          if (meta) sessions.push(meta);
+        }
       }
-    }
-  } catch {}
-
+    } catch {}
+  }
   return sessions;
 }
 
-module.exports = { discoverClaudeSessions, CLAUDE_PROJECTS_DIR };
+module.exports = { discoverClaudeSessions, CLAUDE_PROJECTS_DIRS };

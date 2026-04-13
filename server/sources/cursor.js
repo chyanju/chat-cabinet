@@ -3,7 +3,11 @@ const path = require('path');
 const os = require('os');
 const { decodeProjectDir } = require('../utils');
 
-const CURSOR_PROJECTS_DIR = path.join(os.homedir(), '.cursor', 'projects');
+// macOS/Linux: ~/.cursor/projects  |  Windows: %APPDATA%\Cursor\projects
+const CURSOR_PROJECTS_DIRS = [
+  path.join(os.homedir(), '.cursor', 'projects'),
+  ...(process.env.APPDATA ? [path.join(process.env.APPDATA, 'Cursor', 'projects')] : []),
+];
 
 function parseCursorSession(filePath, projectDir, sessionDir) {
   try {
@@ -52,24 +56,24 @@ function parseCursorSession(filePath, projectDir, sessionDir) {
 
 function discoverCursorSessions() {
   const sessions = [];
-  if (!fs.existsSync(CURSOR_PROJECTS_DIR)) return sessions;
-
-  try {
-    for (const projectDir of fs.readdirSync(CURSOR_PROJECTS_DIR)) {
-      const transcriptsDir = path.join(CURSOR_PROJECTS_DIR, projectDir, 'agent-transcripts');
-      if (!fs.existsSync(transcriptsDir)) continue;
-      try {
-        for (const sessionDir of fs.readdirSync(transcriptsDir)) {
-          const sessionJsonl = path.join(transcriptsDir, sessionDir, `${sessionDir}.jsonl`);
-          if (!fs.existsSync(sessionJsonl)) continue;
-          const meta = parseCursorSession(sessionJsonl, projectDir, sessionDir);
-          if (meta) sessions.push(meta);
-        }
-      } catch {}
-    }
-  } catch {}
-
+  for (const dir of CURSOR_PROJECTS_DIRS) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      for (const projectDir of fs.readdirSync(dir)) {
+        const transcriptsDir = path.join(dir, projectDir, 'agent-transcripts');
+        if (!fs.existsSync(transcriptsDir)) continue;
+        try {
+          for (const sessionDir of fs.readdirSync(transcriptsDir)) {
+            const sessionJsonl = path.join(transcriptsDir, sessionDir, `${sessionDir}.jsonl`);
+            if (!fs.existsSync(sessionJsonl)) continue;
+            const meta = parseCursorSession(sessionJsonl, projectDir, sessionDir);
+            if (meta) sessions.push(meta);
+          }
+        } catch {}
+      }
+    } catch {}
+  }
   return sessions;
 }
 
-module.exports = { discoverCursorSessions, CURSOR_PROJECTS_DIR };
+module.exports = { discoverCursorSessions, CURSOR_PROJECTS_DIRS };

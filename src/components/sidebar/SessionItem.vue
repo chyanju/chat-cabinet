@@ -41,7 +41,7 @@ const timeStr = computed(() => {
 
 const shortCwd = computed(() => {
   const cwd = props.session.cwd || '';
-  return cwd.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~');
+  return cwd.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~').replace(/^[A-Z]:\\Users\\[^\\]+/, '~');
 });
 
 let clickTimer = null;

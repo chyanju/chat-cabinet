@@ -125,7 +125,7 @@
             <img src="/logo.png" alt="" class="about-logo">
             <span class="about-title">Chat Cabinet</span>
           </div>
-          <div class="about-version">v0.3.2</div>
+          <div class="about-version">v0.3.4</div>
           <p class="about-desc">A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, and Cursor.</p>
           <div class="about-footer">
             <button class="about-close-btn" @click="showAbout = false">Close</button>

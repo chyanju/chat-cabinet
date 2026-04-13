@@ -1,6 +1,6 @@
 <h1><img src="public/logo.png" width="28" height="28" alt="icon" style="vertical-align: middle;" />&nbsp;Chat Cabinet</h1>
 
-A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, and Cursor.
+A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, Cursor, and LM Studio.
 
 ## What It Does
 
@@ -9,6 +9,9 @@ A local viewer for browsing AI coding assistant session logs from Codex CLI, VS 
 - **Save / Link** — save session snapshots to a local SQLite database, or keep them linked to live source files
 - **Privacy Mode** — redact sensitive info (file paths, emails, API keys, IPs, etc.) with configurable presets
 - **Export** — export sessions to Markdown, plain text, or Cabinet JSON with selectable fields
+- **File attachments** — displays attached files (images, documents) with metadata
+- **Consent tracking** — color-coded badges for tool call approval state (auto, accepted, rejected, etc.)
+- Supports macOS, Linux, and Windows
 - Supports both desktop GUI mode and browser/headless mode
 
 ## Run It

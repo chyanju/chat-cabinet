@@ -28,9 +28,13 @@ function readWorkspaceFolder(wsHashDir) {
     const data = JSON.parse(fs.readFileSync(wsJson, 'utf-8'));
     const folder = data.folder || '';
     try {
-      return new URL(folder).pathname;
+      let p = decodeURIComponent(new URL(folder).pathname);
+      // Windows: new URL('file:///C:/foo').pathname → '/C:/foo'; strip leading slash
+      if (process.platform === 'win32' && /^\/[A-Za-z]:/.test(p)) p = p.slice(1);
+      return p;
     } catch {
-      return folder.replace(/^file:\/\//, '').replace(/^\/\//, '');
+      const raw = folder.replace(/^file:\/\//, '').replace(/^\/\//, '');
+      return decodeURIComponent(raw);
     }
   } catch {
     return '';
@@ -41,12 +45,22 @@ function readWorkspaceFolder(wsHashDir) {
  * Decode a Claude Code / Cursor project directory name back to a filesystem path.
  *
  * Claude encodes /Users/joseph/foo-bar as -Users-joseph-foo-bar.
+ * On Windows it encodes C:\Users\joseph\foo as -C-Users-joseph-foo.
  * We try all possible splits and pick the one where the most path segments
  * actually exist on disk.
  */
 function decodeProjectDir(encoded) {
   const raw = encoded.replace(/^-/, '');
   const parts = raw.split('-');
+  const sep = path.sep;
+
+  // On Windows, the first part may be a drive letter (e.g. 'C')
+  let startPrefix = '';
+  let startIdx = 0;
+  if (process.platform === 'win32' && parts.length >= 1 && /^[A-Za-z]$/.test(parts[0])) {
+    startPrefix = parts[0] + ':';
+    startIdx = 1;
+  }
 
   function resolve(idx, prefix) {
     if (idx >= parts.length) return prefix;
@@ -54,7 +68,7 @@ function decodeProjectDir(encoded) {
     let accumulated = parts[idx];
     for (let end = idx; end < parts.length; end++) {
       if (end > idx) accumulated += '-' + parts[end];
-      const candidate = prefix + '/' + accumulated;
+      const candidate = prefix + sep + accumulated;
 
       if (end === parts.length - 1) {
         if (fs.existsSync(candidate)) return candidate;
@@ -64,11 +78,11 @@ function decodeProjectDir(encoded) {
       }
     }
 
-    const fallback = prefix + '/' + parts[idx];
+    const fallback = prefix + sep + parts[idx];
     return resolve(idx + 1, fallback);
   }
 
-  return resolve(0, '');
+  return resolve(startIdx, startPrefix);
 }
 
 module.exports = { findJsonlFiles, readWorkspaceFolder, decodeProjectDir };

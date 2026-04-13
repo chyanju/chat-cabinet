@@ -17,7 +17,7 @@
           <span class="event-pill">
             {{ event.action === 'create' ? '\uD83D\uDCC4' : event.action === 'delete' ? '\uD83D\uDDD1\uFE0F' : '\u270F\uFE0F' }}
             {{ event.action || 'modify' }}
-            {{ redact((event.uri || '').replace(/^\/Users\/[^/]+/, '~')) }}
+            {{ redact((event.uri || '').replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~').replace(/^[A-Z]:\\Users\\[^\\]+/, '~')) }}
           </span>
         </div>
       </template>

@@ -1,6 +1,6 @@
 {
   "name": "chat-cabinet",
-  "version": "0.3.2",
+  "version": "0.3.4",
   "description": "Browse and view local AI coding assistant session logs",
   "main": "server.js",
   "scripts": {

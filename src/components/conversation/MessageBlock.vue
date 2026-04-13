@@ -13,6 +13,16 @@
       </sl-details>
     </div>
     <div v-else class="msg-body" v-html="renderedContent"></div>
+
+    <!-- File attachments -->
+    <div v-if="event.attachments?.length" class="msg-attachments">
+      <div v-for="(att, i) in event.attachments" :key="i" class="msg-attachment">
+        <span class="att-icon">{{ attIcon(att) }}</span>
+        <span class="att-name">{{ att.name || 'file' }}</span>
+        <span v-if="att.size_bytes" class="att-size">{{ formatBytes(att.size_bytes) }}</span>
+        <span v-if="att.type && att.type !== 'file'" class="att-type">{{ att.type }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -35,7 +45,7 @@ const isAssistant = computed(() => role.value === 'assistant');
 
 const shouldRender = computed(() => {
   if (props.event.is_command) return false;
-  if (!(props.event.content || '').trim()) return false;
+  if (!(props.event.content || '').trim() && !props.event.attachments?.length) return false;
   return true;
 });
 
@@ -62,6 +72,22 @@ const label = computed(() => {
 const renderedContent = computed(() => {
   return renderMarkdown(redact(props.event.content || ''));
 });
+
+function attIcon(att) {
+  const t = (att.type || '').toLowerCase();
+  if (t.includes('image')) return '\uD83D\uDDBC\uFE0F';
+  if (t.includes('word') || t.includes('doc')) return '\uD83D\uDCC4';
+  if (t.includes('pdf')) return '\uD83D\uDCC4';
+  if (t.includes('audio')) return '\uD83C\uDFB5';
+  if (t.includes('video')) return '\uD83C\uDFAC';
+  return '\uD83D\uDCCE';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
 </script>
 
 <style scoped>
@@ -85,5 +111,40 @@ const renderedContent = computed(() => {
 
 .system-details {
   margin: 0 14px 10px;
+}
+
+/* File attachments */
+.msg-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 14px 10px;
+}
+.msg-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.att-icon { font-size: 13px; }
+.att-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.att-size { color: var(--text-muted); font-size: 10px; }
+.att-type {
+  color: var(--text-muted);
+  font-size: 9px;
+  background: var(--surface-hover);
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 </style>

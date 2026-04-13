@@ -108,7 +108,7 @@ const model = computed(() => {
 
 const cwd = computed(() => {
   const raw = session.value?.workspace?.cwd || meta.value?.cwd || '';
-  return raw.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~');
+  return raw.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~').replace(/^[A-Z]:\\Users\\[^\\]+/, '~');
 });
 
 const isViewTab = computed(() => tabsStore.activeTab?.sessionPath?.startsWith('view-'));

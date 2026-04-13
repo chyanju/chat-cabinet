@@ -2,7 +2,8 @@
   <div class="msg-block" :class="isError ? 'msg-tool-error' : 'msg-tool'">
     <sl-details :open="true">
       <div slot="summary" class="tool-summary">
-        <span>&#128295; {{ toolId }} {{ badge }}</span>
+        <span class="tool-name">&#128295; {{ toolId }}</span>
+        <span v-if="confirmState && confirmState !== 'unknown'" class="conf-badge" :class="'conf-' + confirmState">{{ confirmLabel }}</span>
         <span class="tool-meta">{{ durStr }}{{ formatTimeBrief(event.timestamp) }}</span>
       </div>
 
@@ -69,7 +70,7 @@ import { redact } from '../../lib/redact.js';
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 
 const CONFIRMATION_LABELS = {
-  'auto': 'Auto',
+  'auto': 'Auto-approved',
   'accepted': 'Accepted',
   'rejected': 'Rejected',
   'allow_all': 'Allow All',
@@ -85,10 +86,8 @@ const isError = computed(() => props.event.status === 'error');
 const input = computed(() => props.event.input || {});
 const output = computed(() => props.event.output || {});
 
-const badge = computed(() => {
-  const state = props.event.confirmation?.state;
-  return state && CONFIRMATION_LABELS[state] ? `[${CONFIRMATION_LABELS[state]}]` : '';
-});
+const confirmState = computed(() => props.event.confirmation?.state || '');
+const confirmLabel = computed(() => CONFIRMATION_LABELS[confirmState.value] || '');
 
 const durStr = computed(() => {
   return props.event.duration_ms ? `${(props.event.duration_ms / 1000).toFixed(1)}s \u00b7 ` : '';
@@ -149,11 +148,48 @@ sl-details::part(content) {
   gap: 8px;
   width: 100%;
 }
+.tool-name {
+  white-space: nowrap;
+}
 .tool-meta {
   font-weight: 400;
   font-size: 10px;
   color: var(--text-muted);
   margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Confirmation badges — colored pills similar to the Dev badge */
+.conf-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.conf-auto {
+  background: #3fb950;
+  color: #fff;
+}
+.conf-accepted {
+  background: #58a6ff;
+  color: #fff;
+}
+.conf-allow_all {
+  background: #58a6ff;
+  color: #fff;
+}
+.conf-rejected {
+  background: #f85149;
+  color: #fff;
+}
+.conf-pending {
+  background: #8b949e;
+  color: #fff;
 }
 
 .tool-detail {

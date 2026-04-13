@@ -2,7 +2,7 @@
 
 **Version:** 1  
 **Status:** Draft  
-**Last Updated:** 2026-04-07
+**Last Updated:** 2026-04-12
 
 ## Overview
 
@@ -38,7 +38,7 @@ Identifies where the session came from.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `tool` | string | yes | Source tool identifier. One of: `codex`, `vscode-copilot`, `vscode-chat`, `claude-code`, `cursor` |
+| `tool` | string | yes | Source tool identifier. One of: `codex`, `vscode-copilot`, `vscode-chat`, `claude-code`, `cursor`, `lmstudio` |
 | `tool_version` | string | no | Version of the source tool |
 | `format` | string | yes | Original file format identifier |
 | `file_path` | string | yes | Path to the original session file |

@@ -6,13 +6,15 @@ const crypto = require('crypto');
 const { getDb } = require('./db');
 
 const { CODEX_HOME } = require('./sources/codex');
-const { CLAUDE_PROJECTS_DIR } = require('./sources/claude');
-const { CURSOR_PROJECTS_DIR } = require('./sources/cursor');
+const { CLAUDE_PROJECTS_DIRS } = require('./sources/claude');
+const { CURSOR_PROJECTS_DIRS } = require('./sources/cursor');
+const { LMSTUDIO_CONVERSATIONS_DIR } = require('./sources/lmstudio');
 const { discoverCodexSessions } = require('./sources/codex');
 const { discoverVSCodeDebugLogs } = require('./sources/vscode-copilot');
 const { discoverVSCodeChatSessions } = require('./sources/vscode-chat');
 const { discoverClaudeSessions } = require('./sources/claude');
 const { discoverCursorSessions } = require('./sources/cursor');
+const { discoverLmStudioSessions } = require('./sources/lmstudio');
 
 // Converters: raw entries → Chat Cabinet unified format
 const { convertCodexSession } = require('./convert/codex');
@@ -20,24 +22,43 @@ const { convertVSCodeDebugLog } = require('./convert/vscode-copilot');
 const { convertVSCodeChatSession } = require('./convert/vscode-chat');
 const { convertClaudeCodeSession } = require('./convert/claude');
 const { convertCursorSession } = require('./convert/cursor');
+const { convertLmStudioSession } = require('./convert/lmstudio');
 
-/** VS Code workspace storage directories to scan. */
-const VSCODE_DIRS = [
-  {
-    label: 'VS Code Insiders',
-    source: 'vscode-insiders',
-    base: path.join(os.homedir(), 'Library', 'Application Support', 'Code - Insiders', 'User', 'workspaceStorage'),
-  },
-  {
-    label: 'VS Code',
-    source: 'vscode-stable',
-    base: path.join(os.homedir(), 'Library', 'Application Support', 'Code', 'User', 'workspaceStorage'),
-  },
-];
+/** VS Code workspace storage directories to scan (macOS + Linux + Windows). */
+const VSCODE_DIRS = (() => {
+  const dirs = [];
+  const home = os.homedir();
+  const appdata = process.env.APPDATA || '';
+
+  // macOS
+  for (const [label, source, folder] of [
+    ['VS Code Insiders', 'vscode-insiders', 'Code - Insiders'],
+    ['VS Code', 'vscode-stable', 'Code'],
+  ]) {
+    dirs.push({ label, source, base: path.join(home, 'Library', 'Application Support', folder, 'User', 'workspaceStorage') });
+  }
+  // Linux
+  for (const [label, source, folder] of [
+    ['VS Code Insiders', 'vscode-insiders', 'Code - Insiders'],
+    ['VS Code', 'vscode-stable', 'Code'],
+  ]) {
+    dirs.push({ label, source, base: path.join(home, '.config', folder, 'User', 'workspaceStorage') });
+  }
+  // Windows
+  if (appdata) {
+    for (const [label, source, folder] of [
+      ['VS Code Insiders', 'vscode-insiders', 'Code - Insiders'],
+      ['VS Code', 'vscode-stable', 'Code'],
+    ]) {
+      dirs.push({ label, source, base: path.join(appdata, folder, 'User', 'workspaceStorage') });
+    }
+  }
+  return dirs;
+})();
 
 /** Allowed path prefixes for loadSession (security). */
 function getAllowedPrefixes() {
-  const prefixes = [CODEX_HOME, CLAUDE_PROJECTS_DIR, CURSOR_PROJECTS_DIR];
+  const prefixes = [CODEX_HOME, ...CLAUDE_PROJECTS_DIRS, ...CURSOR_PROJECTS_DIRS, LMSTUDIO_CONVERSATIONS_DIR];
   for (const vsc of VSCODE_DIRS) {
     if (fs.existsSync(vsc.base)) prefixes.push(vsc.base);
   }
@@ -55,6 +76,7 @@ function discoverAll() {
   sessions.push(...discoverVSCodeChatSessions(VSCODE_DIRS, debugLogIds));
   sessions.push(...discoverClaudeSessions());
   sessions.push(...discoverCursorSessions());
+  sessions.push(...discoverLmStudioSessions());
   return sessions;
 }
 
@@ -173,6 +195,7 @@ const converters = {
   'vscode-chat-session': convertVSCodeChatSession,
   'claude-code':         convertClaudeCodeSession,
   'cursor':              convertCursorSession,
+  'lmstudio':            convertLmStudioSession,
 };
 
 /**
@@ -192,13 +215,6 @@ function readAndConvert(row) {
   }
 
   const raw = fs.readFileSync(resolved, 'utf-8');
-  const entries = [];
-  for (const line of raw.split('\n')) {
-    if (!line.trim()) continue;
-    try { entries.push(JSON.parse(line)); } catch {}
-  }
-
-  const format = row.format || detectFormat(entries);
   const meta = {
     id: row.id,
     filePath: row.source_path,
@@ -211,6 +227,20 @@ function readAndConvert(row) {
     cwd: row.cwd,
   };
 
+  // LM Studio: single JSON file (not JSONL)
+  if (row.format === 'lmstudio') {
+    const data = JSON.parse(raw);
+    return convertLmStudioSession(data, meta);
+  }
+
+  // All other sources: JSONL (one JSON object per line)
+  const entries = [];
+  for (const line of raw.split('\n')) {
+    if (!line.trim()) continue;
+    try { entries.push(JSON.parse(line)); } catch {}
+  }
+
+  const format = row.format || detectFormat(entries);
   const convert = converters[format];
   if (convert) return convert(entries, meta);
   return { version: 1, session_id: null, source: { format }, turns: [{ turn_id: '0', events: [] }] };

@@ -168,6 +168,11 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const resolved = path.resolve(body.dir);
+      // Only allow opening the cabinet data directory
+      if (resolved !== path.resolve(getCabinetDir())) {
+        jsonResponse(res, 403, { error: 'Not allowed' });
+        return;
+      }
       if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
         jsonResponse(res, 400, { error: 'Invalid directory' });
         return;
