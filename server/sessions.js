@@ -71,9 +71,19 @@ function getAllowedPrefixes() {
 function discoverAll() {
   const sessions = [];
   sessions.push(...discoverCodexSessions());
-  const { sessions: debugLogSessions, sessionIds: debugLogIds } = discoverVSCodeDebugLogs(VSCODE_DIRS);
-  sessions.push(...debugLogSessions);
-  sessions.push(...discoverVSCodeChatSessions(VSCODE_DIRS, debugLogIds));
+
+  // Prefer chatSessions over debug-logs: chatSessions have richer data
+  // (isConfirmed consent state, file edits, thinking, etc.).
+  // Discover chatSessions first, then skip debug-logs that overlap.
+  const chatSessions = discoverVSCodeChatSessions(VSCODE_DIRS, new Set());
+  const chatSessionIds = new Set(chatSessions.map(s => s.id));
+  sessions.push(...chatSessions);
+
+  const { sessions: debugLogSessions } = discoverVSCodeDebugLogs(VSCODE_DIRS);
+  for (const dl of debugLogSessions) {
+    if (!chatSessionIds.has(dl.id)) sessions.push(dl);
+  }
+
   sessions.push(...discoverClaudeSessions());
   sessions.push(...discoverCursorSessions());
   sessions.push(...discoverLmStudioSessions());

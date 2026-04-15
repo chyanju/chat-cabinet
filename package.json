@@ -1,6 +1,6 @@
 {
   "name": "chat-cabinet",
-  "version": "0.3.4",
+  "version": "0.3.6",
   "description": "Browse and view local AI coding assistant session logs",
   "main": "server.js",
   "scripts": {
@@ -23,6 +23,8 @@
   "devDependencies": {
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/cli": "^2.10.1",
+    "@tauri-apps/plugin-dialog": "^2.7.0",
+    "@tauri-apps/plugin-fs": "^2.5.0",
     "@vitejs/plugin-vue": "^6.0.5",
     "concurrently": "^9.2.1",
     "simple-icons": "^16.15.0",

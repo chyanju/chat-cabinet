@@ -2,7 +2,7 @@
 
 **Version:** 1  
 **Status:** Draft  
-**Last Updated:** 2026-04-12
+**Last Updated:** 2026-04-15
 
 ## Overview
 
@@ -20,7 +20,8 @@ Raw JSONL ──→ Converter (per source) ──→ Chat Cabinet JSON ──→
 
 ```jsonc
 {
-  "version": 1,
+  "cabinet_version": "0.3.5",   // app version that produced this export
+  "version": 1,                  // format schema version
   "session_id": "uuid",
   "source": { ... },
   "created_at": "ISO-8601",
@@ -31,6 +32,10 @@ Raw JSONL ──→ Converter (per source) ──→ Chat Cabinet JSON ──→
   "turns": [ ... ]
 }
 ```
+
+`cabinet_version` is the Chat Cabinet app version (from `package.json`) that
+produced the export. It is added only on JSON export, not stored internally.
+`version` is the format schema version (currently `1`).
 
 ### `source`
 
@@ -168,25 +173,54 @@ Records whether the user was involved in approving this tool call.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `state` | string | One of: `auto`, `accepted`, `rejected`, `allow_all`, `pending`, `unknown` |
+| `state` | string | One of: `auto`, `setting`, `accepted`, `rejected`, `skipped`, `allow_all`, `pending`, `passed`, `unknown` |
 | `required` | boolean | Whether user confirmation was required |
 | `user_action` | boolean | Whether the user actively participated |
 | `message` | string | Confirmation prompt text (if any) |
 
-**State mapping from VS Code `isConfirmed.type`:**
+**Confirmation states:**
 
-| type | state | user_action | Description |
-|------|-------|-------------|-------------|
-| 0 | `accepted` | true | User explicitly clicked Accept |
-| 1 | `auto` | false | Auto-confirmed, no prompt shown |
-| 2 | `rejected` | true | User clicked Reject/Deny |
-| 3 | `accepted` | true | User accepted after confirmation dialog |
-| 4 | `allow_all` | true | User clicked "Allow All" for the session |
-| 5 | `accepted` | true | User explicitly accepted |
-| null | `unknown` | null | No confirmation data available |
+| state | Meaning | When to use |
+|-------|---------|-------------|
+| `accepted` | User explicitly approved | Raw data confirms user clicked Accept (VS Code type 4) |
+| `auto` | Auto-approved, no prompt shown | Confirmation not needed by design (VS Code type 1) |
+| `setting` | Pre-approved via user rule | Approved by persistent setting or per-tool rule (VS Code type 2/3) |
+| `rejected` | User explicitly denied | Raw data confirms rejection (VS Code type 0) |
+| `skipped` | User chose to skip | Proceeded without running the tool (VS Code type 5) |
+| `allow_all` | User clicked "Allow All" | Raw data confirms allow-all |
+| `pending` | Awaiting approval | Tool has not yet executed |
+| `passed` | Tool executed, consent mechanism unknown | Tool ran successfully but source format has no consent data |
+| `unknown` | No information available | No execution or consent data at all |
 
-Sources without confirmation data (Codex CLI, Claude Code, Cursor, VS Code
-debug-logs) set `state: "unknown"` and `user_action: null`.
+**Labeling rules:** Definitive states (`accepted`, `auto`, `rejected`, `allow_all`)
+require explicit raw evidence from the source format. When a tool completed
+execution but no consent data exists, use `passed`. Never infer definitive
+consent states from heuristics such as tool name patterns.
+
+**VS Code chat-session `isConfirmed.type` mapping** (only source with real consent data):
+
+Maps from the `ToolConfirmKind` enum in VS Code
+(`src/vs/workbench/contrib/chat/common/chatService/chatService.ts`).
+
+| type | ToolConfirmKind | state | user_action | Description |
+|------|-----------------|-------|-------------|-------------|
+| 0 | Denied | `rejected` | true | User explicitly denied |
+| 1 | ConfirmationNotNeeded | `auto` | false | Auto-approved, no prompt shown |
+| 2 | Setting | `setting` | false | Approved via persistent user setting |
+| 3 | LmServicePerTool | `setting` | false | Approved by LM service per-tool rule (may include `scope`) |
+| 4 | UserAction | `accepted` | true | User explicitly clicked Accept |
+| 5 | Skipped | `skipped` | true | User chose to skip (proceed without running) |
+| boolean `true` | (legacy) | `accepted` | true | Pre-1.104 VS Code legacy format |
+| boolean `false` | (legacy) | `rejected` | true | Pre-1.104 VS Code legacy format |
+| null/undefined | — | `unknown` | null | No confirmation data available |
+
+Sources without consent data (Codex CLI, Claude Code, Cursor, LM Studio) use
+`state: "passed"` for completed tool calls and `state: "unknown"` for tool
+requests with no execution evidence.
+
+**VS Code session priority:** When a session exists in both `chatSessions`
+(with consent data) and `debug-logs` (without), Chat Cabinet prefers the
+`chatSessions` version to preserve consent fidelity.
 
 ### `thinking`
 

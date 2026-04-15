@@ -158,7 +158,7 @@ function convertCodexSession(entries, meta) {
           call_id: p.call_id, status: p.status === 'completed' ? 'ok' : p.status || null,
           input: { raw: p.input || null },
           output: {},
-          confirmation: { state: 'unknown', user_action: null },
+          confirmation: { state: 'passed', user_action: null },
         });
       }
       continue;
@@ -200,7 +200,7 @@ function convertCodexToolCall(pair, ts, execEnd, patchEnd) {
   return {
     type: 'tool_call', timestamp: ts, tool_id: name, call_id: call?.call_id || null,
     status, input, output: out,
-    confirmation: { state: 'unknown', user_action: null },
+    confirmation: { state: 'passed', user_action: null },
     duration_ms: execEnd?.duration?.secs ? execEnd.duration.secs * 1000 : null,
   };
 }

@@ -2,6 +2,41 @@
 
 All notable changes to Chat Cabinet are documented in this file.
 
+## [0.3.6] - 2026-04-15
+
+### Added
+- **Consent tooltips** — hovering over consent badges shows a Shoelace tooltip explaining the state (e.g. "User explicitly clicked Accept to approve this tool call"); uses same Shoelace style as the Storage help icon
+- **Cabinet version in JSON export** — exported Cabinet JSON now includes `cabinet_version` (from package.json) at the top level for format compatibility tracking
+- **New consent states** — `setting` (pre-approved via user rule, purple badge), `skipped` (user chose to skip, gray badge), `passed` (executed but consent unknown, amber badge) for finer-grained consent tracking
+
+### Changed
+- **VS Code session priority** — chatSessions (with consent data) are now preferred over debug-logs when both exist for the same session, preserving consent fidelity
+- **Consent mapping overhaul** — fixed `mapConfirmation` to match actual VS Code `ToolConfirmKind` enum values; types 2/3 now map to `setting` instead of `auto`, type 5 maps to `skipped` instead of `rejected`; legacy boolean `isConfirmed` handled separately
+- Sources without consent data (debug-logs, Codex, Claude Code, Cursor, LM Studio) now use `passed` for completed tool calls instead of `unknown`
+
+### Fixed
+- **VS Code chatSession tool call dedup** — same tool call appearing in multiple requests (with partial then final consent state) is now deduplicated by `call_id`, keeping only the last (richest) occurrence
+- VS Code hidden wrapper tools (e.g. `copilot_fetchWebPage` wrapping `vscode_fetchWebPage_internal`) with `presentation: "hiddenAfterComplete"` are now filtered in addition to `"hidden"`
+
+## [0.3.5] - 2026-04-15
+
+### Added
+- **Native Save As dialog** — export now opens a platform-native file picker (via `tauri-plugin-dialog` + `tauri-plugin-fs`) instead of auto-saving to Downloads; browser mode falls back to blob download
+- **Session alias** — editable alias field for sessions with display priority (alias > title > timestamp fallback); click-to-edit inline UI with confirm/cancel, stored in SQLite
+
+### Changed
+- **Export: agent info** — user messages now include VS Code Copilot agent target (e.g. `USER → agent-name`) matching the conversation renderer
+- **Export: tool call duration** — tool call headers now include execution duration in seconds
+- **Export: output.urls** — fetched URLs from tool calls are now included in exported text
+- **Export: standalone exit_code** — terminal tool calls with no stdout but an exit code are now exported (previously silently dropped)
+- **Export: thinking blocks** — removed aggressive 500-char truncation (now exports full content); added model tag and encrypted-content indicator
+- **Export: attachment field** — fixed field name mismatch (`att.size` → `att.size_bytes`) so file sizes are properly included
+- **Export: attachment type** — generic `file` type is now suppressed to reduce noise; only non-default types shown
+- About dialog now lists all 6 supported sources (was missing LM Studio)
+
+### Fixed
+- `extractContent` → `extractContentAndAttachments` rename was incomplete in LM Studio converter's singleStep branch (would crash at runtime)
+
 ## [0.3.4] - 2026-04-12
 
 ### Added

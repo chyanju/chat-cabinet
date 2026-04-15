@@ -50,6 +50,29 @@ function convertVSCodeChatSession(entries, meta) {
     if (turn) result.turns.push(turn);
   }
 
+  // Step 4: Deduplicate tool_call events by call_id across turns.
+  // VS Code may record the same tool call in multiple requests (e.g. once
+  // without isConfirmed, then again with the final consent state).  Keep the
+  // last occurrence (richest data) and remove earlier duplicates.
+  const seenCallIds = new Map(); // call_id → { turnIdx, eventIdx }
+  for (let ti = 0; ti < result.turns.length; ti++) {
+    const events = result.turns[ti].events;
+    for (let ei = 0; ei < events.length; ei++) {
+      const ev = events[ei];
+      if (ev.type !== 'tool_call' || !ev.call_id) continue;
+      const prev = seenCallIds.get(ev.call_id);
+      if (prev) {
+        // Remove the earlier (less complete) duplicate
+        result.turns[prev.turnIdx].events[prev.eventIdx] = null;
+      }
+      seenCallIds.set(ev.call_id, { turnIdx: ti, eventIdx: ei });
+    }
+  }
+  // Clean up nulled entries
+  for (const turn of result.turns) {
+    turn.events = turn.events.filter(e => e !== null);
+  }
+
   return result;
 }
 
@@ -94,8 +117,8 @@ function convertRequest(req) {
     }
 
     if (ik === 'toolInvocationSerialized') {
-      // Skip hidden wrapper tools
-      if (item.presentation === 'hidden') continue;
+      // Skip hidden wrapper tools (e.g. copilot_fetchWebPage wrapping vscode_fetchWebPage_internal)
+      if (item.presentation === 'hidden' || item.presentation === 'hiddenAfterComplete') continue;
       events.push(convertToolInvocation(item, ts));
     } else if (ik === 'thinking') {
       const thinkItems = item.value || [];
@@ -181,17 +204,35 @@ function convertRequest(req) {
   };
 }
 
-/** Map VS Code isConfirmed.type to Chat Cabinet confirmation state. */
+/**
+ * Map VS Code ToolConfirmKind (isConfirmed.type) to Chat Cabinet confirmation state.
+ *
+ * VS Code enum (src/vs/workbench/contrib/chat/common/chatService/chatService.ts):
+ *   0 = Denied              — user explicitly denied
+ *   1 = ConfirmationNotNeeded — auto-approved, no prompt shown
+ *   2 = Setting             — approved via persistent user setting
+ *   3 = LmServicePerTool    — approved by LM service per-tool rule
+ *   4 = UserAction          — user explicitly clicked Accept
+ *   5 = Skipped             — user chose to skip (proceed without running)
+ *
+ * Legacy: isConfirmed may be a plain boolean (pre-1.104 VS Code).
+ */
 function mapConfirmation(isConfirmed) {
   if (isConfirmed == null) return { state: 'unknown', required: null, user_action: null };
-  const type = typeof isConfirmed === 'object' ? isConfirmed.type : isConfirmed;
+  if (typeof isConfirmed === 'boolean') {
+    return isConfirmed
+      ? { state: 'accepted', required: null, user_action: true }
+      : { state: 'rejected', required: null, user_action: true };
+  }
+  const raw = typeof isConfirmed === 'object' ? isConfirmed : { type: isConfirmed };
+  const type = raw.type;
   switch (type) {
-    case 0: return { state: 'accepted', required: true, user_action: true };
+    case 0: return { state: 'rejected', required: true, user_action: true };
     case 1: return { state: 'auto', required: false, user_action: false };
-    case 2: return { state: 'rejected', required: true, user_action: true };
-    case 3: return { state: 'accepted', required: true, user_action: true };
-    case 4: return { state: 'allow_all', required: true, user_action: true };
-    case 5: return { state: 'accepted', required: true, user_action: true };
+    case 2: return { state: 'setting', required: false, user_action: false };
+    case 3: return { state: 'setting', required: false, user_action: false, scope: raw.scope || null };
+    case 4: return { state: 'accepted', required: true, user_action: true };
+    case 5: return { state: 'skipped', required: true, user_action: true };
     default: return { state: 'unknown', required: null, user_action: null };
   }
 }

@@ -91,10 +91,16 @@ function convertVSCodeDebugLog(entries, meta) {
         if (attrs.result) output.text = typeof attrs.result === 'string' ? attrs.result : JSON.stringify(attrs.result);
         if (attrs.error) output.error = attrs.error;
 
+        // Debug-logs have no consent data; only mark execution status.
+        const toolStatus = e.status || null;
+        const confirmation = toolStatus === 'ok'
+          ? { state: 'passed', required: null, user_action: null }
+          : { state: 'unknown', required: null, user_action: null };
+
         ensureTurn(ts).events.push({
           type: 'tool_call', timestamp: ts, tool_id: e.name || 'unknown',
-          status: e.status || null, input, output,
-          confirmation: { state: 'unknown', user_action: null },
+          status: toolStatus, input, output,
+          confirmation,
           duration_ms: e.dur || null,
         });
         break;

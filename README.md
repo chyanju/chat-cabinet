@@ -8,9 +8,9 @@ A local viewer for browsing AI coding assistant session logs from Codex CLI, VS 
 - Lets you search, filter, tag, and inspect conversations in one UI
 - **Save / Link** — save session snapshots to a local SQLite database, or keep them linked to live source files
 - **Privacy Mode** — redact sensitive info (file paths, emails, API keys, IPs, etc.) with configurable presets
-- **Export** — export sessions to Markdown, plain text, or Cabinet JSON with selectable fields
+- **Export** — export sessions to Markdown, plain text, or Cabinet JSON with selectable fields; native Save As dialog in desktop mode
 - **File attachments** — displays attached files (images, documents) with metadata
-- **Consent tracking** — color-coded badges for tool call approval state (auto, accepted, rejected, etc.)
+- **Consent tracking** — color-coded badges for tool call approval state (auto, pre-approved, accepted, rejected, skipped, passed) with explanatory tooltips; VS Code chatSessions provide full consent fidelity
 - Supports macOS, Linux, and Windows
 - Supports both desktop GUI mode and browser/headless mode
 

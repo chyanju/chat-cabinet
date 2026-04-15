@@ -91,7 +91,7 @@ function convertLmStudioSession(data, meta) {
               call_id: step.callId || null, status: step.result ? 'ok' : 'pending',
               input: { raw: step.arguments || null },
               output: { text: step.result || null },
-              confirmation: { state: 'unknown', user_action: null },
+              confirmation: { state: step.result ? 'passed' : 'unknown', user_action: null },
             });
           }
         }

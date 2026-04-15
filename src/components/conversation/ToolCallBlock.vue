@@ -3,7 +3,10 @@
     <sl-details :open="true">
       <div slot="summary" class="tool-summary">
         <span class="tool-name">&#128295; {{ toolId }}</span>
-        <span v-if="confirmState && confirmState !== 'unknown'" class="conf-badge" :class="'conf-' + confirmState">{{ confirmLabel }}</span>
+        <sl-tooltip v-if="confirmState && confirmState !== 'unknown'" class="conf-tip" hoist>
+          <div slot="content" class="conf-tip-text">{{ confirmTooltip }}</div>
+          <span class="conf-badge" :class="'conf-' + confirmState">{{ confirmLabel }}</span>
+        </sl-tooltip>
         <span class="tool-meta">{{ durStr }}{{ formatTimeBrief(event.timestamp) }}</span>
       </div>
 
@@ -68,13 +71,28 @@ import { formatTimeBrief } from '../../lib/format.js';
 import { redact } from '../../lib/redact.js';
 
 import '@shoelace-style/shoelace/dist/components/details/details.js';
+import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
 
 const CONFIRMATION_LABELS = {
   'auto': 'Auto-approved',
+  'setting': 'Pre-approved',
   'accepted': 'Accepted',
   'rejected': 'Rejected',
+  'skipped': 'Skipped',
   'allow_all': 'Allow All',
   'pending': 'Pending',
+  'passed': 'Passed',
+};
+
+const CONFIRMATION_TOOLTIPS = {
+  'auto': 'Confirmation not needed — tool ran automatically without prompting the user',
+  'setting': 'Pre-approved via a persistent user setting or per-tool rule',
+  'accepted': 'User explicitly clicked Accept to approve this tool call',
+  'rejected': 'User explicitly denied this tool call',
+  'skipped': 'User chose to skip — proceeded without running this tool',
+  'allow_all': 'User clicked Allow All to approve all tools for this session',
+  'pending': 'Awaiting user approval — tool has not yet executed',
+  'passed': 'Tool executed successfully, but consent mechanism is unknown (source format lacks consent data)',
 };
 
 const props = defineProps({
@@ -88,6 +106,7 @@ const output = computed(() => props.event.output || {});
 
 const confirmState = computed(() => props.event.confirmation?.state || '');
 const confirmLabel = computed(() => CONFIRMATION_LABELS[confirmState.value] || '');
+const confirmTooltip = computed(() => CONFIRMATION_TOOLTIPS[confirmState.value] || '');
 
 const durStr = computed(() => {
   return props.event.duration_ms ? `${(props.event.duration_ms / 1000).toFixed(1)}s \u00b7 ` : '';
@@ -190,6 +209,34 @@ sl-details::part(content) {
 .conf-pending {
   background: #8b949e;
   color: #fff;
+}
+.conf-passed {
+  background: #d29922;
+  color: #fff;
+}
+.conf-setting {
+  background: #8957e5;
+  color: #fff;
+}
+.conf-skipped {
+  background: #8b949e;
+  color: #fff;
+}
+.conf-tip {
+  --sl-tooltip-font-size: 11px;
+  --sl-tooltip-padding: 6px 10px;
+}
+.conf-tip::part(body) {
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+.conf-tip-text {
+  text-transform: none;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.4;
 }
 
 .tool-detail {

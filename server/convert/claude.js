@@ -90,7 +90,7 @@ function convertClaudeCodeSession(entries, meta) {
                 call_id: c.tool_use_id || null,
                 status: c.is_error ? 'error' : 'ok',
                 output: { text: resultText, error: c.is_error ? resultText : null },
-                confirmation: { state: 'unknown', user_action: null },
+                confirmation: { state: 'passed', user_action: null },
               });
             }
           }

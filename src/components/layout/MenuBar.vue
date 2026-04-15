@@ -125,8 +125,8 @@
             <img src="/logo.png" alt="" class="about-logo">
             <span class="about-title">Chat Cabinet</span>
           </div>
-          <div class="about-version">v0.3.4</div>
-          <p class="about-desc">A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, and Cursor.</p>
+          <div class="about-version">v0.3.6</div>
+          <p class="about-desc">A local viewer for browsing AI coding assistant session logs from Codex CLI, VS Code Copilot Chat, Claude Code, Cursor, and LM Studio.</p>
           <div class="about-footer">
             <button class="about-close-btn" @click="showAbout = false">Close</button>
           </div>
@@ -189,22 +189,22 @@ function selectAllPresets() {
   uiStore.selectAllPrivacyPresets(rules.map((r) => r.id));
 }
 
-function doExport(format) {
+async function doExport(format) {
   const session = tabsStore.activeSession;
   const meta = tabsStore.activeMeta;
   if (!session || !meta) return;
   const text = entriesToText(session, meta, format, exportCfg);
   const ts = (meta.timestamp || new Date().toISOString()).replace(/[:.]/g, '-').slice(0, 19);
-  downloadFile(`session-${ts}.${format}`, text);
+  await downloadFile(`session-${ts}.${format}`, text);
 }
 
-function doExportJson() {
+async function doExportJson() {
   const session = tabsStore.activeSession;
   const meta = tabsStore.activeMeta;
   if (!session || !meta) return;
   const json = sessionToJson(session);
   const ts = (meta.timestamp || new Date().toISOString()).replace(/[:.]/g, '-').slice(0, 19);
-  downloadFile(`session-${ts}.json`, json, 'application/json;charset=utf-8');
+  await downloadFile(`session-${ts}.json`, json, 'application/json;charset=utf-8');
 }
 
 function onHide(which) {
