@@ -2,7 +2,7 @@
   <div class="msg-block" :class="isError ? 'msg-tool-error' : 'msg-tool'">
     <sl-details :open="true">
       <div slot="summary" class="tool-summary">
-        <span class="tool-name">&#128295; {{ toolId }}</span>
+        <span class="tool-name">&#128295; {{ toolId }}<span v-if="mcpServer" class="mcp-label">{{ mcpServer }}</span></span>
         <sl-tooltip v-if="confirmState && confirmState !== 'unknown'" class="conf-tip" hoist>
           <div slot="content" class="conf-tip-text">{{ confirmTooltip }}</div>
           <span class="conf-badge" :class="'conf-' + confirmState">{{ confirmLabel }}</span>
@@ -100,6 +100,7 @@ const props = defineProps({
 });
 
 const toolId = computed(() => props.event.tool_id || 'unknown');
+const mcpServer = computed(() => props.event.mcp_server || '');
 const isError = computed(() => props.event.status === 'error');
 const input = computed(() => props.event.input || {});
 const output = computed(() => props.event.output || {});
@@ -169,6 +170,16 @@ sl-details::part(content) {
 }
 .tool-name {
   white-space: nowrap;
+}
+.mcp-label {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  background: var(--surface1, #30363d);
+  color: var(--text-muted, #8b949e);
+  vertical-align: middle;
 }
 .tool-meta {
   font-weight: 400;

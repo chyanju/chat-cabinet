@@ -303,9 +303,14 @@ function convertToolInvocation(item, ts) {
     output.text = resultText;
   }
 
+  // MCP server label
+  const src = item.source || {};
+  const mcpServer = src.type === 'mcp' ? (src.label || src.serverLabel || null) : null;
+
   return {
     type: 'tool_call', timestamp: ts, tool_id: toolId, call_id: item.toolCallId || null,
     status, input, output, confirmation, duration_ms: durationMs, subagent,
+    mcp_server: mcpServer,
   };
 }
 
